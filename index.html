@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>FreshTrack — Inventario</title>
+<title>GuardiandelVencimiento — Inventario</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -497,7 +497,7 @@ select option { background: var(--surface2); }
 <!-- ════════════════ AUTH SCREEN ════════════════ -->
 <div id="authScreen" class="visible">
   <div class="auth-box">
-    <div class="auth-logo">Fresh<span>Track</span></div>
+    <div class="auth-logo">Guardian<span>Del</span><span>Vencimiento</span></div>
     <div class="auth-subtitle">Controla tus vencimientos con inteligencia</div>
 
     <div class="auth-tabs">
@@ -541,7 +541,7 @@ select option { background: var(--surface2); }
 
   <!-- Topbar -->
   <div class="topbar">
-    <div class="logo">Fresh<span>Track</span></div>
+    <div class="logo">Guardian<span>Del</span><span>Vencimiento</span></div>
     <div id="userEmail" style="font-size:12px;color:var(--muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
     <button class="btn-logout" onclick="logout()">Salir</button>
   </div>
@@ -1034,7 +1034,7 @@ function pedirNotificaciones() {
   Notification.requestPermission().then(function(perm) {
     document.getElementById("notifBanner").style.display = "none";
     if (perm === "granted") {
-      enviarNotificacion("🎉 FreshTrack activado", "Recibirás alertas cuando tus productos estén por vencer.");
+      enviarNotificacion("🎉 Guardian del Vencimiento activado", "Recibirás alertas cuando tus productos estén por vencer.");
       verificarAvisos();
     }
   });
