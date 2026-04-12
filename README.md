@@ -1,6 +1,6 @@
-# 📦 FreshTrack — Escáner de Inventario Inteligente
+# 📦 Guardian del Vencimiento — Escáner de Inventario Inteligente
 
-FreshTrack es una aplicación web móvil que permite escanear productos con código de barras, registrarlos en Airtable y recibir alertas antes de que venzan. Cada usuario ve únicamente sus propios productos gracias a la autenticación con Firebase.
+Guardian del Vencimiento es una aplicación web móvil que permite escanear productos con código de barras, registrarlos en Airtable y recibir alertas antes de que venzan. Cada usuario ve únicamente sus propios productos gracias a la autenticación con Firebase.
 
 ---
 
@@ -21,7 +21,7 @@ FreshTrack es una aplicación web móvil que permite escanear productos con cód
 ## 🗂️ Estructura del proyecto
 
 ```
-freshtrack.html     ← Toda la app en un solo archivo HTML
+Guardian del Vencimiento.html     ← Toda la app en un solo archivo HTML
 README.md           ← Esta documentación
 ```
 
@@ -65,7 +65,7 @@ La app está construida en HTML, CSS y JavaScript puro, sin frameworks ni bundle
 **Token de acceso:**
 1. Ve a [airtable.com/create/tokens](https://airtable.com/create/tokens)
 2. Clic en **Create new token**
-3. Dale un nombre (ej: `freshtrack`)
+3. Dale un nombre (ej: `Guardian del Vencimiento`)
 4. En Scopes agrega: `data.records:read` y `data.records:write`
 5. En Access agrega tu base
 6. Copia el token generado
@@ -77,7 +77,7 @@ La app está construida en HTML, CSS y JavaScript puro, sin frameworks ni bundle
 
 #### Pegar las credenciales en el archivo
 
-Busca esta sección en `freshtrack.html` y reemplaza los valores:
+Busca esta sección en `Guardian del Vencimiento.html` y reemplaza los valores:
 
 ```javascript
 const AIRTABLE_TOKEN = "TU_TOKEN_AQUI";
@@ -98,13 +98,13 @@ const TABLA          = "BASE DE DATOS";
 #### Registrar la app web
 
 1. En el panel del proyecto, clic en el ícono **`</>`** (Web)
-2. Escribe un apodo (ej: `freshtrack`)
+2. Escribe un apodo (ej: `Guardian del Vencimiento`)
 3. Clic en **Registrar app**
 4. Firebase te mostrará un bloque `firebaseConfig` — cópialo
 
 #### Pegar la configuración en el archivo
 
-Busca esta sección en `freshtrack.html` y reemplaza con tus valores reales:
+Busca esta sección en `Guardian del Vencimiento.html` y reemplaza con tus valores reales:
 
 ```javascript
 const firebaseConfig = {
@@ -138,14 +138,14 @@ const firebaseConfig = {
 Si quieres que la app tenga una URL pública y funcione desde el celular sin abrir archivos localmente:
 
 1. Crea una cuenta en [github.com](https://github.com) (gratuita)
-2. Crea un **repositorio público** nuevo (ej: `freshtrack`)
-3. Sube el archivo `freshtrack.html` renombrado como `index.html`
+2. Crea un **repositorio público** nuevo (ej: `Guardian del Vencimiento`)
+3. Sube el archivo `Guardian del Vencimiento.html` renombrado como `index.html`
 4. Ve a **Settings** del repositorio → **Pages**
 5. En Source selecciona `Deploy from a branch` → `main` → `/ (root)`
 6. Guarda. En 1-2 minutos aparecerá tu URL:
 
 ```
-https://TU_USUARIO.github.io/freshtrack/
+https://TU_USUARIO.github.io/Guardian del Vencimiento/
 ```
 
 #### Autorizar el dominio en Firebase
