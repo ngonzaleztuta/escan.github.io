@@ -667,9 +667,9 @@ const firebaseConfig = {
 
 
 // ── Airtable ──
- const TOKEN   = "patH2lLXW4YJYez4a.cd0772ea1837b4cdbd8579e6840f7e36bcb17e0214ab2fafa10252d6d2fd2cea";
-  const BASE_ID = "appNGlPOc4Q3DKGNC";
-  const TABLA   = "Table 1";
+  const AIRTABLE_TOKEN = "patH2lLXW4YJYez4a.cd0772ea1837b4cdbd8579e6840f7e36bcb17e0214ab2fafa10252d6d2fd2cea";
+  const BASE_ID        = "appNGlPOc4Q3DKGNC";
+  const TABLA          = "Table 1";
 
 
 // ════════════════ FIREBASE INIT ════════════════
@@ -863,7 +863,7 @@ async function guardarEnAirtable() {
 function limpiarFormulario() {
   document.getElementById("codigoDetectado").value = "";
   document.getElementById("nombre").value           = "";
-  document.getElementById("tipo").value             = "";
+  document.getElementById("tipo").value             = "Alimento";
   document.getElementById("fechaVence").value       = "";
   document.getElementById("fechaAviso").value       = "";
   ultimoCodigo = "";
