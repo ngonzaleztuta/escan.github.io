@@ -5,416 +5,854 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Escáner de Inventario</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:#f4f6f9; --white:#fff; --primary:#1565C0; --primary-light:#e3f0ff;
-    --green:#2e7d32; --green-light:#e8f5e9; --red:#c62828; --red-light:#ffebee;
-    --blue-info:#1565c0; --blue-info-light:#e3f2fd;
-    --text:#1a1a2e; --muted:#6b7280; --border:#e2e8f0;
-    --shadow:0 2px 12px rgba(0,0,0,0.08); --radius:14px;
-  }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{font-family:'DM Sans',sans-serif;background:var(--bg);min-height:100vh;padding-bottom:80px;}
+:root {
+  --bg:#f4f6f9; --white:#fff; --primary:#1565C0; --primary-light:#e3f0ff;
+  --green:#2e7d32; --green-light:#e8f5e9; --red:#c62828; --red-light:#ffebee;
+  --blue-info:#1565c0; --blue-info-light:#e3f2fd;
+  --text:#1a1a2e; --muted:#6b7280; --border:#e2e8f0;
+  --shadow:0 2px 12px rgba(0,0,0,0.08); --radius:14px;
+  --warn:#e65100; --warn-light:#fff3e0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);min-height:100vh;padding-bottom:80px;}
 
-  .header{background:var(--primary);color:#fff;padding:18px 16px 14px;text-align:center;
-    font-size:17px;font-weight:700;position:sticky;top:0;z-index:100;
-    box-shadow:0 2px 8px rgba(21,101,192,0.25);}
+/* ══ AUTH SCREEN ══ */
+#authScreen{
+  display:none;min-height:100vh;align-items:center;justify-content:center;
+  padding:24px;background:var(--bg);
+}
+#authScreen.visible{display:flex;}
+.auth-box{
+  width:100%;max-width:380px;background:var(--white);
+  border-radius:20px;padding:36px 28px;
+  box-shadow:0 8px 40px rgba(21,101,192,0.13);
+}
+.auth-logo{font-size:26px;font-weight:800;color:var(--primary);margin-bottom:4px;}
+.auth-logo span{color:var(--text);}
+.auth-subtitle{color:var(--muted);font-size:14px;margin-bottom:28px;}
+.auth-tabs{
+  display:flex;background:var(--bg);border-radius:10px;
+  padding:4px;margin-bottom:24px;gap:4px;
+}
+.auth-tab{
+  flex:1;padding:8px;border:none;border-radius:8px;background:transparent;
+  color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;
+  font-weight:600;cursor:pointer;transition:all 0.2s;
+}
+.auth-tab.active{background:var(--white);color:var(--primary);box-shadow:0 1px 6px rgba(0,0,0,0.1);}
+.auth-error{
+  background:var(--red-light);border:1px solid #ef9a9a;color:var(--red);
+  border-radius:8px;padding:10px 14px;font-size:13px;margin-top:12px;display:none;
+}
+.auth-error.visible{display:block;}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:16px 0 12px;}
+.auth-divider div{flex:1;height:1px;background:var(--border);}
+.auth-divider span{font-size:12px;color:var(--muted);}
+.btn-google{
+  width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--border);
+  background:var(--white);color:var(--text);font-family:'DM Sans',sans-serif;
+  font-size:14px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+.btn-google:hover{border-color:#4285F4;box-shadow:0 2px 8px rgba(66,133,244,0.2);}
 
-  .bottom-tabs{position:fixed;bottom:0;left:0;right:0;background:var(--white);
-    border-top:1px solid var(--border);display:flex;z-index:100;
-    box-shadow:0 -2px 12px rgba(0,0,0,0.07);}
-  .tab-btn{flex:1;padding:10px 0 12px;border:none;background:transparent;cursor:pointer;
-    display:flex;flex-direction:column;align-items:center;gap:3px;}
-  .tab-btn .tab-icon{font-size:22px;}
-  .tab-btn .tab-label{font-size:11px;font-weight:600;color:#9ca3af;letter-spacing:0.4px;
-    text-transform:uppercase;transition:color 0.2s;}
-  .tab-btn.active .tab-label{color:var(--primary);}
-  .tab-btn .tab-bar{width:0;height:3px;background:var(--primary);border-radius:99px;
-    transition:width 0.25s;margin-top:2px;}
-  .tab-btn.active .tab-bar{width:32px;}
-  /* badge contador */
-  .tab-badge{position:relative;display:inline-block;}
-  .tab-badge .count{position:absolute;top:-6px;right:-10px;background:#e53935;color:#fff;
-    border-radius:99px;font-size:10px;font-weight:700;padding:1px 5px;
-    display:none;line-height:1.4;}
-  .tab-badge .count.visible{display:block;}
+/* ══ HEADER ══ */
+.header{
+  background:var(--primary);color:#fff;padding:14px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(21,101,192,0.25);
+}
+.header-title{font-size:17px;font-weight:700;}
+.header-user{font-size:11px;opacity:0.8;max-width:140px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;}
+.btn-logout{
+  background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);
+  color:#fff;padding:5px 10px;border-radius:7px;font-size:12px;
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.2s;
+}
+.btn-logout:hover{background:rgba(255,255,255,0.25);}
 
-  .page{display:none;padding:16px;}
-  .page.active{display:block;}
+/* ══ COMPARADORES DE USUARIO ══ */
+.user-comparators{
+  background:var(--white);border-bottom:1px solid var(--border);
+  padding:8px 16px;display:flex;gap:10px;flex-wrap:wrap;
+  align-items:center;
+}
+.comparator-tag{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--primary-light);border:1px solid #90caf9;
+  border-radius:20px;padding:4px 10px;font-size:11px;
+  font-weight:600;color:var(--primary);
+}
+.comparator-tag .label{color:var(--muted);font-weight:500;margin-right:2px;}
+.comparator-uid{font-family:'DM Mono',monospace;font-size:10px;
+  max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
-  /* Scanner */
-  #scanner-container{width:100%;max-width:440px;margin:0 auto 14px;border-radius:var(--radius);
-    overflow:hidden;background:#000;position:relative;height:220px;box-shadow:var(--shadow);}
-  #scanner-container video,#scanner-container canvas{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;}
-  .scan-overlay{position:absolute;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;}
-  .scan-frame{width:200px;height:100px;border:2px solid rgba(255,255,255,0.4);border-radius:8px;position:relative;}
-  .scan-frame::before,.scan-frame::after{content:'';position:absolute;width:20px;height:20px;border-color:#00e676;border-style:solid;}
-  .scan-frame::before{top:-2px;left:-2px;border-width:3px 0 0 3px;border-radius:4px 0 0 0;}
-  .scan-frame::after{bottom:-2px;right:-2px;border-width:0 3px 3px 0;border-radius:0 0 4px 0;}
-  .linea-scan{position:absolute;left:10%;right:10%;height:2px;background:#00e676;
-    box-shadow:0 0 10px #00e676;z-index:10;animation:scan 2s ease-in-out infinite;}
-  @keyframes scan{0%{top:20%}50%{top:80%}100%{top:20%}}
+/* ══ BOTTOM TABS ══ */
+.bottom-tabs{position:fixed;bottom:0;left:0;right:0;background:var(--white);
+  border-top:1px solid var(--border);display:flex;z-index:100;
+  box-shadow:0 -2px 12px rgba(0,0,0,0.07);}
+.tab-btn{flex:1;padding:10px 0 12px;border:none;background:transparent;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:3px;}
+.tab-btn .tab-icon{font-size:22px;}
+.tab-btn .tab-label{font-size:11px;font-weight:600;color:#9ca3af;letter-spacing:0.4px;
+  text-transform:uppercase;transition:color 0.2s;}
+.tab-btn.active .tab-label{color:var(--primary);}
+.tab-btn .tab-bar{width:0;height:3px;background:var(--primary);border-radius:99px;
+  transition:width 0.25s;margin-top:2px;}
+.tab-btn.active .tab-bar{width:32px;}
+.tab-badge{position:relative;display:inline-block;}
+.tab-badge .count{position:absolute;top:-6px;right:-10px;background:#e53935;color:#fff;
+  border-radius:99px;font-size:10px;font-weight:700;padding:1px 5px;
+  display:none;line-height:1.4;}
+.tab-badge .count.visible{display:block;}
 
-  .btn-row{max-width:440px;margin:0 auto 14px;display:flex;gap:10px;}
-  .btn{flex:1;padding:13px 10px;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;
-    font-size:15px;font-weight:700;cursor:pointer;transition:transform 0.1s,opacity 0.15s;
-    display:flex;align-items:center;justify-content:center;gap:6px;}
-  .btn:active{transform:scale(0.97);opacity:0.85;}
-  .btn-escanear{background:var(--primary);color:#fff;}
-  .btn-detener{background:var(--red);color:#fff;display:none;}
-  .btn-guardar{background:var(--green);color:#fff;width:100%;}
+/* ══ PAGES ══ */
+.page{display:none;padding:16px;}
+.page.active{display:block;}
 
-  .card{background:var(--white);border-radius:var(--radius);padding:18px;
-    max-width:440px;margin:0 auto 14px;box-shadow:var(--shadow);}
-  .campo{margin-bottom:14px;}
-  label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;
-    text-transform:uppercase;letter-spacing:0.6px;font-weight:600;}
-  input,select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;
-    font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);background:#fafbfc;
-    transition:border-color 0.2s;}
-  input:focus,select:focus{outline:none;border-color:var(--primary);background:#fff;}
-  #codigoDetectado{background:var(--green-light);border-color:#a5d6a7;color:var(--green);
-    font-family:'DM Mono',monospace;font-weight:500;}
-  #estado{text-align:center;font-size:14px;font-weight:500;padding:11px 14px;
-    border-radius:9px;margin-top:10px;display:none;}
-  .exito{background:var(--green-light);color:var(--green);}
-  .error{background:var(--red-light);color:var(--red);}
-  .cargando{background:var(--blue-info-light);color:var(--blue-info);}
+/* ══ NOTIF BANNER ══ */
+.notif-banner{
+  background:var(--blue-info-light);border:1px solid #90caf9;border-radius:10px;
+  padding:12px 14px;font-size:13px;color:var(--blue-info);margin-bottom:14px;
+  display:none;align-items:center;gap:10px;max-width:440px;margin-left:auto;margin-right:auto;
+}
+.notif-banner.visible{display:flex;}
+.notif-banner button{
+  margin-left:auto;background:var(--primary);border:none;border-radius:6px;
+  padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;color:#fff;
+  white-space:nowrap;
+}
 
-  /* Inventario */
-  .inv-header{max-width:440px;margin:0 auto 14px;display:flex;align-items:center;justify-content:space-between;}
-  .inv-title{font-size:18px;font-weight:700;color:var(--text);}
-  .inv-sub{font-size:13px;color:var(--muted);font-weight:500;margin-top:2px;}
+/* ══ SCANNER ══ */
+#scanner-container{width:100%;max-width:440px;margin:0 auto 14px;border-radius:var(--radius);
+  overflow:hidden;background:#000;position:relative;height:220px;box-shadow:var(--shadow);}
+#scanner-container video,#scanner-container canvas{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;}
+.scan-overlay{position:absolute;inset:0;z-index:9;display:none;align-items:center;justify-content:center;}
+.scan-overlay.active{display:flex;}
+.scan-frame{width:200px;height:100px;border:2px solid rgba(255,255,255,0.4);border-radius:8px;position:relative;}
+.scan-frame::before,.scan-frame::after{content:'';position:absolute;width:20px;height:20px;border-color:#00e676;border-style:solid;}
+.scan-frame::before{top:-2px;left:-2px;border-width:3px 0 0 3px;border-radius:4px 0 0 0;}
+.scan-frame::after{bottom:-2px;right:-2px;border-width:0 3px 3px 0;border-radius:0 0 4px 0;}
+.linea-scan{position:absolute;left:10%;right:10%;height:2px;background:#00e676;
+  box-shadow:0 0 10px #00e676;z-index:10;animation:scan 2s ease-in-out infinite;display:none;}
+.linea-scan.active{display:block;}
+.scan-idle{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:8px;color:#aaa;font-size:13px;}
+.scan-idle-icon{font-size:40px;}
 
-  .btn-limpiar{background:#fff0f0;color:var(--red);border:none;border-radius:8px;
-    padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
-    cursor:pointer;display:flex;align-items:center;gap:5px;}
+.btn-row{max-width:440px;margin:0 auto 14px;display:flex;gap:10px;}
+.btn{flex:1;padding:13px 10px;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;
+  font-size:15px;font-weight:700;cursor:pointer;transition:transform 0.1s,opacity 0.15s;
+  display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn:active{transform:scale(0.97);opacity:0.85;}
+.btn-escanear{background:var(--primary);color:#fff;}
+.btn-detener{background:var(--red);color:#fff;display:none;}
+.btn-guardar{background:var(--green);color:#fff;width:100%;}
+.btn-auth-main{background:var(--primary);color:#fff;width:100%;margin-top:4px;
+  border:none;border-radius:10px;padding:13px;font-family:'DM Sans',sans-serif;
+  font-size:15px;font-weight:700;cursor:pointer;}
 
-  .filter-bar{max-width:440px;margin:0 auto 14px;display:flex;gap:8px;overflow-x:auto;
-    padding-bottom:4px;scrollbar-width:none;}
-  .filter-bar::-webkit-scrollbar{display:none;}
-  .filter-chip{white-space:nowrap;padding:6px 14px;border-radius:99px;
-    border:1.5px solid var(--border);background:var(--white);
-    font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;
-    color:var(--muted);cursor:pointer;transition:all 0.15s;}
-  .filter-chip.active{background:var(--primary);border-color:var(--primary);color:#fff;}
+.card{background:var(--white);border-radius:var(--radius);padding:18px;
+  max-width:440px;margin:0 auto 14px;box-shadow:var(--shadow);}
+.card-title{font-size:14px;font-weight:700;color:var(--primary);margin-bottom:14px;
+  display:flex;align-items:center;gap:6px;}
+.campo{margin-bottom:14px;}
+label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;
+  text-transform:uppercase;letter-spacing:0.6px;font-weight:600;}
+input,select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;
+  font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);background:#fafbfc;
+  transition:border-color 0.2s;}
+input:focus,select:focus{outline:none;border-color:var(--primary);background:#fff;}
+#codigoDetectado{background:var(--green-light);border-color:#a5d6a7;color:var(--green);
+  font-family:'DM Mono',monospace;font-weight:500;}
+#estado{text-align:center;font-size:14px;font-weight:500;padding:11px 14px;
+  border-radius:9px;margin-top:10px;display:none;}
+.exito{background:var(--green-light);color:var(--green);display:block!important;}
+.error{background:var(--red-light);color:var(--red);display:block!important;}
+.cargando{background:var(--blue-info-light);color:var(--blue-info);display:block!important;}
 
-  .inv-list{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:10px;}
-  .inv-item{background:var(--white);border-radius:var(--radius);padding:14px 16px;
-    box-shadow:var(--shadow);display:flex;align-items:flex-start;gap:12px;
-    animation:slideIn 0.3s ease both;}
-  @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-  .inv-item-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;
-    justify-content:center;font-size:22px;flex-shrink:0;}
-  .inv-item-body{flex:1;min-width:0;}
-  .inv-item-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .inv-item-code{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:7px;}
-  .inv-item-meta{display:flex;gap:7px;flex-wrap:wrap;}
-  .badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;
-    border-radius:99px;font-size:11px;font-weight:600;}
-  .badge-tipo{background:#ede9fe;color:#5b21b6;}
-  .badge-vence-ok{background:var(--green-light);color:var(--green);}
-  .badge-vence-warn{background:#fef9c3;color:#854d0e;}
-  .badge-vence-bad{background:#fee2e2;color:#991b1b;}
-  .inv-item-time{font-size:11px;color:#aaa;align-self:flex-start;white-space:nowrap;padding-top:2px;}
+/* ══ INVENTARIO ══ */
+.inv-header{max-width:440px;margin:0 auto 14px;display:flex;align-items:center;justify-content:space-between;}
+.inv-title{font-size:18px;font-weight:700;color:var(--text);}
+.inv-sub{font-size:13px;color:var(--muted);font-weight:500;margin-top:2px;}
 
-  .empty-state{text-align:center;padding:60px 20px;color:var(--muted);max-width:440px;margin:0 auto;}
-  .empty-state .empty-icon{font-size:52px;margin-bottom:14px;}
-  .empty-state p{font-size:15px;font-weight:500;line-height:1.5;}
-  .empty-state small{font-size:13px;opacity:0.7;}
+.filter-bar{max-width:440px;margin:0 auto 14px;display:flex;gap:8px;overflow-x:auto;
+  padding-bottom:4px;scrollbar-width:none;}
+.filter-bar::-webkit-scrollbar{display:none;}
+.filter-chip{white-space:nowrap;padding:6px 14px;border-radius:99px;
+  border:1.5px solid var(--border);background:var(--white);
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;
+  color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.filter-chip.active{background:var(--primary);border-color:var(--primary);color:#fff;}
+.chip-urgente.active{background:var(--red);border-color:var(--red);}
+.chip-aviso.active{background:var(--warn);border-color:var(--warn);}
+
+.inv-list{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:10px;}
+.inv-item{background:var(--white);border-radius:var(--radius);padding:14px 16px;
+  box-shadow:var(--shadow);display:flex;align-items:flex-start;gap:12px;
+  animation:slideIn 0.3s ease both;border-left:4px solid var(--primary);}
+.inv-item.urgente{border-left-color:var(--red);}
+.inv-item.aviso{border-left-color:var(--warn);}
+.inv-item.ok{border-left-color:var(--green);}
+@keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.inv-item-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;
+  justify-content:center;font-size:22px;flex-shrink:0;}
+.inv-item-body{flex:1;min-width:0;}
+.inv-item-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.inv-item-code{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:7px;}
+.inv-item-meta{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:5px;}
+.inv-item-user{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:4px;}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;
+  border-radius:99px;font-size:11px;font-weight:600;}
+.badge-tipo{background:#ede9fe;color:#5b21b6;}
+.badge-vence-ok{background:var(--green-light);color:var(--green);}
+.badge-vence-warn{background:#fff3e0;color:var(--warn);}
+.badge-vence-bad{background:var(--red-light);color:var(--red);}
+.badge-uid{background:#e3f0ff;color:var(--primary);font-family:'DM Mono',monospace;font-size:10px;}
+.badge-email{background:#f3e5f5;color:#7b1fa2;font-size:10px;}
+.inv-item-time{font-size:11px;color:#aaa;align-self:flex-start;white-space:nowrap;padding-top:2px;}
+
+.loading-msg{text-align:center;color:var(--muted);padding:40px 20px;font-size:14px;}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);max-width:440px;margin:0 auto;}
+.empty-state .empty-icon{font-size:52px;margin-bottom:14px;}
+.empty-state p{font-size:15px;font-weight:500;line-height:1.5;}
+.empty-state small{font-size:13px;opacity:0.7;}
+
+.inv-reload-btn{
+  display:block;margin:0 auto 14px;max-width:440px;width:100%;
+  background:var(--primary-light);border:1.5px solid var(--primary);
+  color:var(--primary);border-radius:10px;padding:10px;font-family:'DM Sans',sans-serif;
+  font-size:14px;font-weight:700;cursor:pointer;
+}
 </style>
 </head>
 <body>
 
-<div class="header"> Escáner de Inventario</div>
+<!-- ══════════════ AUTH SCREEN ══════════════ -->
+<div id="authScreen" class="visible">
+  <div class="auth-box">
+    <div class="auth-logo">📦 Escáner de <span>Inventario</span></div>
+    <div class="auth-subtitle">Controla tus productos y vencimientos</div>
 
-<!-- ══ ESCANEAR ══ -->
-<div class="page active" id="page-scan">
-  <div id="scanner-container">
-    <div class="scan-overlay"><div class="scan-frame"></div></div>
-    <div class="linea-scan"></div>
-  </div>
-  <div class="btn-row">
-    <button class="btn btn-escanear" id="btnEscanear" onclick="iniciarEscaner()"> Activar cámara</button>
-    <button class="btn btn-detener"  id="btnDetener"  onclick="detenerEscaner()"> Detener</button>
-  </div>
-  <div class="card">
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Ingresar</button>
+      <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Registrarse</button>
+    </div>
+
     <div class="campo">
-      <label>Código escaneado</label>
-      <input type="text" id="codigoDetectado" placeholder="Escanea un código..." readonly />
+      <label>Correo electrónico</label>
+      <input type="email" id="authEmail" placeholder="tucorreo@gmail.com" />
     </div>
     <div class="campo">
-      <label>Nombre del producto</label>
-      <input type="text" id="nombre" placeholder="Ej: Leche entera 1L" />
+      <label>Contraseña</label>
+      <input type="password" id="authPass" placeholder="Mínimo 6 caracteres" />
     </div>
-    <div class="campo">
-      <label>Tipo</label>
-      <select id="tipo">
-        <option value="Alimento">Alimento</option>
-        <option value="Bebida">Bebida</option>
-        <option value="Lacteos">Lácteos</option>
-        <option value="Condimentos">Condimentos</option>
-        <option value="Snacks">Snacks</option>
-        <option value="Enlatados">Enlatados</option>
-        <option value="Granos">Granos</option>
-        <option value="Panaderia">Panadería</option>
-      </select>
+
+    <button class="btn-auth-main" onclick="authAction()" id="btnAuthAction">Ingresar</button>
+
+    <div class="auth-divider">
+      <div></div><span>o continúa con</span><div></div>
     </div>
-    <div class="campo">
-      <label>Fecha de vencimiento</label>
-      <input type="date" id="fechaVence" />
-    </div>
-    <div class="campo">
-      <label>Fecha de aviso</label>
-      <input type="date" id="fechaAviso" />
-    </div>
-    <button class="btn btn-guardar" onclick="guardarEnAirtable()">💾 Guardar en Airtable</button>
-    <div id="estado"></div>
+
+    <button class="btn-google" onclick="loginConGoogle()">
+      <svg width="18" height="18" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
+      Continuar con Google
+    </button>
+
+    <div class="auth-error" id="authError"></div>
   </div>
 </div>
 
-<!-- ══ INVENTARIO ══ -->
-<div class="page" id="page-inv">
-  <div class="inv-header">
-    <div>
-      <div class="inv-title">Inventario</div>
-      <div class="inv-sub" id="inv-count">0 productos escaneados</div>
-    </div>
-    <button class="btn-limpiar" onclick="limpiarInventario()"> Limpiar</button>
+<!-- ══════════════ APP SCREEN ══════════════ -->
+<div id="appScreen" style="display:none;">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-title">📦 Escáner de Inventario</div>
+    <div id="userEmail" class="header-user"></div>
+    <button class="btn-logout" onclick="logout()">Salir</button>
   </div>
 
-  <div class="filter-bar">
-    <button class="filter-chip active" data-tipo="Todos"       onclick="filtrar(this)">Todos</button>
-    <button class="filter-chip" data-tipo="Alimento"    onclick="filtrar(this)">Alimento</button>
-    <button class="filter-chip" data-tipo="Bebida"      onclick="filtrar(this)">Bebida</button>
-    <button class="filter-chip" data-tipo="Lacteos"     onclick="filtrar(this)">Lácteos</button>
-    <button class="filter-chip" data-tipo="Condimentos" onclick="filtrar(this)">Condimentos</button>
-    <button class="filter-chip" data-tipo="Snacks"      onclick="filtrar(this)">Snacks</button>
-    <button class="filter-chip" data-tipo="Enlatados"   onclick="filtrar(this)">Enlatados</button>
-    <button class="filter-chip" data-tipo="Granos"      onclick="filtrar(this)">Granos</button>
-    <button class="filter-chip" data-tipo="Panaderia"   onclick="filtrar(this)">Panadería</button>
-  </div>
-
-  <div id="inv-content"></div>
-</div>
-
-<!-- TABS -->
-<div class="bottom-tabs">
-  <button class="tab-btn active" id="tab-scan" onclick="cambiarTab('scan')">
-    <span class="tab-icon"></span>
-    <span class="tab-label">Escanear</span>
-    <div class="tab-bar"></div>
-  </button>
-  <button class="tab-btn" id="tab-inv" onclick="cambiarTab('inv')">
-    <span class="tab-icon">
-      <span class="tab-badge"><span class="count" id="tab-count"></span></span>
+  <!-- Comparadores de Usuario -->
+  <div class="user-comparators" id="userComparators">
+    <span class="comparator-tag">
+      <span class="label">UID:</span>
+      <span class="comparator-uid" id="compUID">—</span>
     </span>
-    <span class="tab-label">Inventario</span>
-    <div class="tab-bar"></div>
-  </button>
-</div>
+    <span class="comparator-tag">
+      <span class="label">Email:</span>
+      <span id="compEmail">—</span>
+    </span>
+  </div>
+
+  <!-- ══ ESCANEAR ══ -->
+  <div class="page active" id="page-scan">
+
+    <!-- Banner notificaciones -->
+    <div class="notif-banner" id="notifBanner">
+      <span>🔔 Activa notificaciones para alertas de vencimiento</span>
+      <button onclick="pedirNotificaciones()">Activar</button>
+    </div>
+
+    <div id="scanner-container">
+      <div id="scanIdle" class="scan-idle">
+        <div class="scan-idle-icon">📷</div>
+        <div>Presiona "Activar cámara"</div>
+      </div>
+      <div class="scan-overlay" id="scanOverlay"></div>
+      <div class="linea-scan" id="lineaScan"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-escanear" id="btnEscanear" onclick="iniciarEscaner()">📷 Activar cámara</button>
+      <button class="btn btn-detener"  id="btnDetener"  onclick="detenerEscaner()">⏹ Detener</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Datos del producto</div>
+      <div class="campo">
+        <label>Código escaneado</label>
+        <input type="text" id="codigoDetectado" placeholder="Escanea un código..." readonly />
+      </div>
+      <div class="campo">
+        <label>Nombre del producto</label>
+        <input type="text" id="nombre" placeholder="Ej: Leche entera 1L" />
+      </div>
+      <div class="campo">
+        <label>Tipo</label>
+        <select id="tipo">
+          <option value="Alimento">Alimento</option>
+          <option value="Bebida">Bebida</option>
+          <option value="Lacteos">Lácteos</option>
+          <option value="Condimentos">Condimentos</option>
+          <option value="Snacks">Snacks</option>
+          <option value="Enlatados">Enlatados</option>
+          <option value="Granos">Granos</option>
+          <option value="Panaderia">Panadería</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div class="campo" style="flex:1;">
+          <label>Fecha de vencimiento</label>
+          <input type="date" id="fechaVence" />
+        </div>
+        <div class="campo" style="flex:1;">
+          <label>Fecha de aviso</label>
+          <input type="date" id="fechaAviso" />
+        </div>
+      </div>
+      <button class="btn btn-guardar" onclick="guardarEnAirtable()">💾 Guardar en Airtable</button>
+      <div id="estado"></div>
+    </div>
+  </div>
+
+  <!-- ══ INVENTARIO ══ -->
+  <div class="page" id="page-inv">
+
+    <div class="inv-header">
+      <div>
+        <div class="inv-title">Mi inventario</div>
+        <div class="inv-sub" id="inv-count">Cargando...</div>
+      </div>
+    </div>
+
+    <button class="inv-reload-btn" onclick="cargarInventario()">🔄 Recargar inventario</button>
+
+    <div class="filter-bar">
+      <button class="filter-chip active" data-filtro="todos"    onclick="filtrar(this)">Todos</button>
+      <button class="filter-chip chip-urgente" data-filtro="urgente" onclick="filtrar(this)">🚨 Urgente</button>
+      <button class="filter-chip chip-aviso"   data-filtro="aviso"   onclick="filtrar(this)">⚠️ Por vencer</button>
+      <button class="filter-chip"              data-filtro="ok"      onclick="filtrar(this)">✅ OK</button>
+    </div>
+
+    <div id="inv-content">
+      <div class="loading-msg">Carga tu inventario en la pestaña Escanear</div>
+    </div>
+  </div>
+
+  <!-- Bottom Tabs -->
+  <div class="bottom-tabs">
+    <button class="tab-btn active" id="tabScan" onclick="switchTab('scan')">
+      <span class="tab-icon">📷</span>
+      <span class="tab-label">Escanear</span>
+      <div class="tab-bar"></div>
+    </button>
+    <button class="tab-btn" id="tabInv" onclick="switchTab('inv')">
+      <span class="tab-badge">
+        <span class="tab-icon">📦</span>
+        <span class="count" id="tab-count"></span>
+      </span>
+      <span class="tab-label">Inventario</span>
+      <div class="tab-bar"></div>
+    </button>
+  </div>
+
+</div><!-- /appScreen -->
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 
 <script>
-  const TOKEN   = "patH2lLXW4YJYez4a.cd0772ea1837b4cdbd8579e6840f7e36bcb17e0214ab2fafa10252d6d2fd2cea";
-  const BASE_ID = "appNGlPOc4Q3DKGNC";
-  const TABLA   = "Table 1";
+// ══════════════════════════════════════════
+//  CONFIGURACIÓN
+// ══════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyBBariTES1Vgu67k4DKz9HmXgC_S0DqdTE",
+  authDomain: "scan-efc75.firebaseapp.com",
+  projectId: "scan-efc75",
+  storageBucket: "scan-efc75.firebasestorage.app",
+  messagingSenderId: "925479664370",
+  appId: "1:925479664370:web:dffbd0dec95aa32bbfae6b",
+  measurementId: "G-LGJ125S708"
+};
 
-  let escaneando = false;
-  let ultimoCodigo = "";
-  let filtroActual = "Todos";
 
-  // Lista local de productos guardados esta sesión
-  let inventario = JSON.parse(localStorage.getItem("inv_local") || "[]");
+const AIRTABLE_TOKEN = "patH2lLXW4YJYez4a.cd0772ea1837b4cdbd8579e6840f7e36bcb17e0214ab2fafa10252d6d2fd2cea";
+const BASE_ID        = "appNGlPOc4Q3DKGNC";
+const TABLA          = "Table 1";
 
-    // ── Tabs ──
-  function cambiarTab(tab) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('page-' + tab).classList.add('active');
-    document.getElementById('tab-' + tab).classList.add('active');
-    if (tab === 'inv') renderInventario();
+// ══════════════════════════════════════════
+//  FIREBASE INIT
+// ══════════════════════════════════════════
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+// ══════════════════════════════════════════
+//  ESTADO GLOBAL
+// ══════════════════════════════════════════
+let currentUser       = null;
+let escaneando        = false;
+let ultimoCodigo      = "";
+let todosLosProductos = [];
+let filtroActual      = "todos";
+
+// ══════════════════════════════════════════
+//  ICONOS / COLORES POR TIPO
+// ══════════════════════════════════════════
+const tipoIcono  = { Alimento:"🥗", Bebida:"🥤", Lacteos:"🥛", Condimentos:"🧂", Snacks:"🍿", Enlatados:"🥫", Granos:"🌾", Panaderia:"🍞", default:"📦" };
+const tipoColor  = { Alimento:"#e8f5e9", Bebida:"#e3f2fd", Lacteos:"#fce4ec", Condimentos:"#fff3e0", Snacks:"#fbe9e7", Enlatados:"#f3e5f5", Granos:"#fffde7", Panaderia:"#efebe9", default:"#f5f5f5" };
+
+// ══════════════════════════════════════════
+//  AUTH STATE
+// ══════════════════════════════════════════
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  if (user) {
+    // Ocultar auth, mostrar app
+    document.getElementById("authScreen").classList.remove("visible");
+    document.getElementById("authScreen").style.display = "none";
+    document.getElementById("appScreen").style.display  = "block";
+
+    // Mostrar email en header
+    document.getElementById("userEmail").textContent = user.email;
+
+    // ── COMPARADORES DE USUARIO ──
+    document.getElementById("compUID").textContent   = user.uid;
+    document.getElementById("compUID").title         = user.uid;
+    document.getElementById("compEmail").textContent = user.email;
+
+    cargarInventario();
+    verificarPermisoNotificaciones();
+  } else {
+    document.getElementById("authScreen").style.display = "flex";
+    document.getElementById("authScreen").classList.add("visible");
+    document.getElementById("appScreen").style.display  = "none";
   }
+});
 
-  // ── Escáner ──
-  function iniciarEscaner() {
-    Quagga.init({
-      inputStream: {
-        name:"Live", type:"LiveStream",
-        target: document.getElementById("scanner-container"),
-        constraints:{facingMode:"environment",width:{ideal:640},height:{ideal:480}}
-      },
-      decoder:{readers:["ean_reader","ean_8_reader","code_128_reader","code_39_reader","upc_reader"]}
-    }, function(err) {
-      if (err) { mostrarEstado(" No se pudo acceder a la cámara: " + err, "error"); return; }
-      Quagga.start(); escaneando = true;
-      document.getElementById("btnEscanear").style.display = "none";
-      document.getElementById("btnDetener").style.display  = "block";
-    });
-    Quagga.onDetected(function(result) {
-      const codigo = result.codeResult.code;
-      if (codigo !== ultimoCodigo) {
-        ultimoCodigo = codigo;
-        document.getElementById("codigoDetectado").value = codigo;
-        if (navigator.vibrate) navigator.vibrate(200);
-        detenerEscaner();
-      }
-    });
+// ══════════════════════════════════════════
+//  AUTH HELPERS
+// ══════════════════════════════════════════
+let authMode = "login";
+
+function switchAuthTab(mode) {
+  authMode = mode;
+  document.getElementById("tabLogin").classList.toggle("active",    mode === "login");
+  document.getElementById("tabRegister").classList.toggle("active", mode === "register");
+  document.getElementById("btnAuthAction").textContent = mode === "login" ? "Ingresar" : "Registrarse";
+  clearAuthError();
+}
+
+function authAction() {
+  const email = document.getElementById("authEmail").value.trim();
+  const pass  = document.getElementById("authPass").value;
+  clearAuthError();
+  if (!email || !pass) { showAuthError("Completa todos los campos"); return; }
+  if (authMode === "login") {
+    auth.signInWithEmailAndPassword(email, pass).catch(e => showAuthError(tradError(e.code)));
+  } else {
+    auth.createUserWithEmailAndPassword(email, pass).catch(e => showAuthError(tradError(e.code)));
   }
+}
 
-  function detenerEscaner() {
-    if (escaneando) { Quagga.stop(); escaneando = false; }
-    document.getElementById("btnEscanear").style.display = "block";
-    document.getElementById("btnDetener").style.display  = "none";
+function loginConGoogle() {
+  clearAuthError();
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(e => showAuthError(tradError(e.code)));
+}
+
+function logout() {
+  detenerEscaner();
+  auth.signOut();
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById("authError");
+  el.textContent = msg; el.classList.add("visible");
+}
+function clearAuthError() {
+  const el = document.getElementById("authError");
+  el.textContent = ""; el.classList.remove("visible");
+}
+function tradError(code) {
+  const m = {
+    "auth/user-not-found":       "No existe una cuenta con ese correo",
+    "auth/wrong-password":       "Contraseña incorrecta",
+    "auth/email-already-in-use": "Ese correo ya está registrado",
+    "auth/weak-password":        "La contraseña debe tener al menos 6 caracteres",
+    "auth/invalid-email":        "Correo inválido",
+    "auth/invalid-credential":   "Correo o contraseña incorrectos",
+    "auth/too-many-requests":    "Demasiados intentos. Intenta más tarde"
+  };
+  return m[code] || ("Error: " + code);
+}
+
+// Enter en pass
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("authPass").addEventListener("keydown", e => {
+    if (e.key === "Enter") authAction();
+  });
+});
+
+// ══════════════════════════════════════════
+//  TABS DE NAVEGACIÓN
+// ══════════════════════════════════════════
+function switchTab(tab) {
+  document.getElementById("tabScan").classList.toggle("active", tab === "scan");
+  document.getElementById("tabInv").classList.toggle("active",  tab === "inv");
+  document.getElementById("page-scan").classList.toggle("active", tab === "scan");
+  document.getElementById("page-inv").classList.toggle("active",  tab === "inv");
+  if (tab === "inv") cargarInventario();
+}
+
+// ══════════════════════════════════════════
+//  NOTIFICACIONES
+// ══════════════════════════════════════════
+function verificarPermisoNotificaciones() {
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "default") {
+    document.getElementById("notifBanner").classList.add("visible");
   }
+}
 
-  // ── Guardar ──
-  async function guardarEnAirtable() {
-    const codigo     = document.getElementById("codigoDetectado").value.trim();
-    const nombre     = document.getElementById("nombre").value.trim();
-    const tipo       = document.getElementById("tipo").value;
-    const fechaVence = document.getElementById("fechaVence").value;
-    const fechaAviso = document.getElementById("fechaAviso").value;
+function pedirNotificaciones() {
+  if (!("Notification" in window)) { alert("Tu navegador no soporta notificaciones"); return; }
+  Notification.requestPermission().then(perm => {
+    document.getElementById("notifBanner").classList.remove("visible");
+    if (perm === "granted") {
+      enviarNotificacion("📦 Escáner de Inventario activado", "Recibirás alertas cuando tus productos estén por vencer.");
+      verificarAvisos();
+    }
+  });
+}
 
-    if (!codigo)   { mostrarEstado("Primero escanea un código", "error"); return; }
-    if (!nombre)   { mostrarEstado(" Ingresa el nombre del producto", "error"); return; }
-    if (!fechaVence || !fechaAviso) { mostrarEstado(" Ingresa las fechas", "error"); return; }
+function verificarAvisos() {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  if (!todosLosProductos.length) return;
 
-    mostrarEstado(" Guardando...", "cargando");
+  const hoy     = new Date(); hoy.setHours(0,0,0,0);
+  const avisados = JSON.parse(localStorage.getItem("inv_avisados") || "{}");
+  const hoyStr  = hoy.toISOString().split("T")[0];
 
+  todosLosProductos.forEach(r => {
+    const f         = r.fields;
+    const nombre    = f["Nombre"] || "Un producto";
+    const key       = r.id + "_" + hoyStr;
+    if (avisados[key]) return;
+
+    const venceDate = f["Fecha vencimiento"] ? parseFecha(f["Fecha vencimiento"]) : null;
+    const avisoDate = f["Fecha Aviso"]       ? parseFecha(f["Fecha Aviso"])       : null;
+    const diasVence = venceDate ? Math.floor((venceDate - hoy) / 86400000) : null;
+    const diasAviso = avisoDate ? Math.floor((avisoDate - hoy) / 86400000) : null;
+
+    if (diasAviso !== null && diasAviso <= 0 && diasVence !== null && diasVence > 0) {
+      enviarNotificacion("⚠️ Por vencer: " + nombre, "Vence el " + formatFecha(f["Fecha vencimiento"]) + ". ¡Úsalo pronto!");
+      avisados[key] = true;
+    }
+    if (diasVence !== null && diasVence === 0) {
+      enviarNotificacion("🚨 Vence HOY: " + nombre, "Recuerda revisar este producto.");
+      avisados[key] = true;
+    }
+    if (diasVence !== null && diasVence < 0) {
+      enviarNotificacion("❌ Vencido: " + nombre, "Venció hace " + Math.abs(diasVence) + " día(s).");
+      avisados[key] = true;
+    }
+  });
+
+  localStorage.setItem("inv_avisados", JSON.stringify(avisados));
+}
+
+function enviarNotificacion(titulo, cuerpo) {
+  if ("Notification" in window && Notification.permission === "granted") {
     try {
-      const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLA)}`, {
-        method: "POST",
-        headers: {"Authorization":"Bearer "+TOKEN,"Content-Type":"application/json"},
-        body: JSON.stringify({fields:{
-          "CODIGO": String(codigo), "Nombre": nombre, "Tipo": tipo,
-          "Fecha vencimiento": fechaVence, "Fecha Aviso": fechaAviso
-        }})
+      new Notification(titulo, {
+        body: cuerpo,
+        icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>"
       });
+    } catch(e) {}
+  }
+}
 
-      if (res.ok) {
-        //  Agregar al inventario local
-        const nuevo = {
-          id: Date.now(),
-          codigo, nombre, tipo, fechaVence, fechaAviso,
-          hora: new Date().toLocaleTimeString('es-CO', {hour:'2-digit',minute:'2-digit'})
-        };
-        inventario.unshift(nuevo);
-        localStorage.setItem("inv_local", JSON.stringify(inventario));
-        actualizarBadge();
-        mostrarEstado(" ¡Guardado! Ya aparece en Inventario", "exito");
-        limpiarFormulario();
-      } else {
-        const err = await res.json();
-        mostrarEstado("Error: " + (err.error?.message || res.status), "error");
-      }
-    } catch(e) {
-      mostrarEstado(" Error de conexión: " + e.message, "error");
+// ══════════════════════════════════════════
+//  ESCÁNER
+// ══════════════════════════════════════════
+function iniciarEscaner() {
+  Quagga.init({
+    inputStream: {
+      name: "Live", type: "LiveStream",
+      target: document.getElementById("scanner-container"),
+      constraints: { facingMode:"environment", width:{ideal:640}, height:{ideal:480} }
+    },
+    decoder: { readers:["ean_reader","ean_8_reader","code_128_reader","code_39_reader","upc_reader"] }
+  }, function(err) {
+    if (err) { mostrarEstado("❌ No se pudo acceder a la cámara: " + err, "error"); return; }
+    Quagga.start(); escaneando = true;
+    document.getElementById("btnEscanear").style.display = "none";
+    document.getElementById("btnDetener").style.display  = "flex";
+    document.getElementById("scanIdle").style.display    = "none";
+    document.getElementById("scanOverlay").classList.add("active");
+    document.getElementById("lineaScan").classList.add("active");
+  });
+
+  Quagga.onDetected(function(result) {
+    const codigo = result.codeResult.code;
+    if (codigo !== ultimoCodigo) {
+      ultimoCodigo = codigo;
+      document.getElementById("codigoDetectado").value = codigo;
+      if (navigator.vibrate) navigator.vibrate([80,40,80]);
+      detenerEscaner();
     }
-  }
+  });
+}
 
-  function limpiarFormulario() {
-    ["codigoDetectado","nombre","fechaVence","fechaAviso"].forEach(id => document.getElementById(id).value = "");
-    document.getElementById("tipo").value = "Alimento";
-    ultimoCodigo = "";
-  }
+function detenerEscaner() {
+  if (escaneando) { try { Quagga.stop(); } catch(e) {} escaneando = false; }
+  document.getElementById("btnEscanear").style.display = "flex";
+  document.getElementById("btnDetener").style.display  = "none";
+  document.getElementById("scanIdle").style.display    = "flex";
+  document.getElementById("scanOverlay").classList.remove("active");
+  document.getElementById("lineaScan").classList.remove("active");
+}
 
-  function mostrarEstado(msg, tipo) {
-    const el = document.getElementById("estado");
-    el.textContent = msg; el.className = tipo; el.style.display = "block";
-    if (tipo === "exito") setTimeout(() => { el.style.display = "none"; }, 3000);
-  }
+// ══════════════════════════════════════════
+//  GUARDAR EN AIRTABLE (con UID y Email)
+// ══════════════════════════════════════════
+async function guardarEnAirtable() {
+  if (!currentUser) { mostrarEstado("⚠️ Inicia sesión primero", "error"); return; }
+  const codigo     = document.getElementById("codigoDetectado").value.trim();
+  const nombre     = document.getElementById("nombre").value.trim();
+  const tipo       = document.getElementById("tipo").value;
+  const fechaVence = document.getElementById("fechaVence").value;
+  const fechaAviso = document.getElementById("fechaAviso").value;
 
-  // ── Inventario local ──
-  function filtrar(chip) {
-    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    filtroActual = chip.dataset.tipo;
-    renderInventario();
-  }
+  if (!codigo)   { mostrarEstado("Primero escanea un código", "error"); return; }
+  if (!nombre)   { mostrarEstado("Ingresa el nombre del producto", "error"); return; }
+  if (!fechaVence || !fechaAviso) { mostrarEstado("Ingresa ambas fechas", "error"); return; }
 
-  function renderInventario() {
-    const items = filtroActual === "Todos"
-      ? inventario
-      : inventario.filter(i => i.tipo === filtroActual);
+  mostrarEstado("⏳ Guardando...", "cargando");
 
-    const total = inventario.length;
-    document.getElementById("inv-count").textContent =
-      `${total} producto${total !== 1 ? "s" : ""} escaneados esta sesión`;
+  try {
+    const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLA)}`, {
+      method: "POST",
+      headers: { "Authorization":"Bearer "+AIRTABLE_TOKEN, "Content-Type":"application/json" },
+      body: JSON.stringify({ fields: {
+        "CODIGO":            String(codigo),
+        "Nombre":            nombre,
+        "Tipo":              tipo,
+        "Fecha vencimiento": fechaVence,
+        "Fecha Aviso":       fechaAviso,
+        "UsuarioUID":        currentUser.uid,   // ← comparador 1
+        "UsuarioEmail":      currentUser.email  // ← comparador 2
+      }})
+    });
 
-    if (items.length === 0) {
-      document.getElementById("inv-content").innerHTML = total === 0
-        ? `<div class="empty-state">
-             <div class="empty-icon"></div>
-             <p>Aún no has guardado<br>ningún producto</p>
-             <small>Escanea y guarda en la pestaña Escanear</small>
-           </div>`
-        : `<div class="empty-state">
-             <div class="empty-icon">🔍</div>
-             <p>No hay productos en<br>esta categoría</p>
-           </div>`;
-      return;
-    }
-
-    const today = new Date(); today.setHours(0,0,0,0);
-
-    const html = items.map((item, i) => {
-      const icon  = tipoIcono[item.tipo] || tipoIcono["default"];
-      const color = tipoColor[item.tipo] || tipoColor["default"];
-
-      let venceBadge = "";
-      if (item.fechaVence) {
-        const d    = new Date(item.fechaVence + "T00:00:00");
-        const diff = Math.round((d - today) / 86400000);
-        const label = diff < 0 ? `Venció hace ${Math.abs(diff)}d`
-                    : diff === 0 ? "Vence hoy"
-                    : `Vence en ${diff}d`;
-        const cls = diff < 0 ? "badge-vence-bad" : diff <= 7 ? "badge-vence-warn" : "badge-vence-ok";
-        venceBadge = `<span class="badge ${cls}"> ${label}</span>`;
-      }
-
-      return `
-        <div class="inv-item" style="animation-delay:${i*0.04}s">
-          <div class="inv-item-icon" style="background:${color}">${icon}</div>
-          <div class="inv-item-body">
-            <div class="inv-item-name">${item.nombre}</div>
-            <div class="inv-item-code">${item.codigo || "—"}</div>
-            <div class="inv-item-meta">
-              <span class="badge badge-tipo">${item.tipo}</span>
-              ${venceBadge}
-            </div>
-          </div>
-          <div class="inv-item-time">${item.hora}</div>
-        </div>`;
-    }).join("");
-
-    document.getElementById("inv-content").innerHTML = `<div class="inv-list">${html}</div>`;
-  }
-
-  function actualizarBadge() {
-    const cnt = document.getElementById("tab-count");
-    if (inventario.length > 0) {
-      cnt.textContent = inventario.length;
+    if (res.ok) {
+      mostrarEstado("✅ ¡Guardado! Ya aparece en Inventario", "exito");
+      limpiarFormulario();
+      // Actualizar badge
+      const cnt = document.getElementById("tab-count");
+      const n   = parseInt(cnt.textContent || "0") + 1;
+      cnt.textContent = n;
       cnt.classList.add("visible");
     } else {
-      cnt.classList.remove("visible");
+      const err = await res.json();
+      mostrarEstado("Error: " + (err.error?.message || res.status), "error");
     }
+  } catch(e) {
+    mostrarEstado("❌ Error de conexión: " + e.message, "error");
   }
+}
 
-  function limpiarInventario() {
-    if (inventario.length === 0) return;
-    if (confirm("¿Limpiar la lista local? Los datos en Airtable no se borran.")) {
-      inventario = [];
-      localStorage.setItem("inv_local", JSON.stringify(inventario));
-      actualizarBadge();
-      renderInventario();
-    }
+function limpiarFormulario() {
+  ["codigoDetectado","nombre","fechaVence","fechaAviso"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("tipo").value = "Alimento";
+  ultimoCodigo = "";
+}
+
+function mostrarEstado(msg, tipo) {
+  const el = document.getElementById("estado");
+  el.textContent = msg; el.className = tipo; el.style.display = "block";
+  if (tipo === "exito") setTimeout(() => { el.style.display = "none"; }, 3000);
+}
+
+// ══════════════════════════════════════════
+//  INVENTARIO — carga desde Airtable
+//  Filtra por UsuarioUID del usuario actual
+// ══════════════════════════════════════════
+async function cargarInventario() {
+  if (!currentUser) return;
+  const lista = document.getElementById("inv-content");
+  lista.innerHTML = '<div class="loading-msg">⏳ Cargando tu inventario…</div>';
+
+  try {
+    // ── COMPARADOR 1: filtra por UsuarioUID ──
+    const formula = encodeURIComponent(`AND({UsuarioUID}="${currentUser.uid}")`);
+    const url     = `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLA)}`
+                  + `?filterByFormula=${formula}`
+                  + `&sort[0][field]=Fecha%20vencimiento&sort[0][direction]=asc`;
+
+    const res  = await fetch(url, { headers:{ "Authorization":"Bearer "+AIRTABLE_TOKEN } });
+    const data = await res.json();
+    todosLosProductos = data.records || [];
+
+    actualizarBadge();
+    renderInventario();
+    verificarAvisos();
+  } catch(e) {
+    lista.innerHTML = `<div class="loading-msg" style="color:#c62828">❌ Error al cargar: ${e.message}</div>`;
   }
+}
 
-  // Init
-  actualizarBadge();
+function parseFecha(str) {
+  const p = str.split("-");
+  return new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+}
+function formatFecha(str) {
+  if (!str) return "";
+  const p = str.split("-");
+  return p[2]+"/"+p[1]+"/"+p[0];
+}
+
+function filtrar(chip) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  filtroActual = chip.dataset.filtro;
   renderInventario();
+}
+
+function renderInventario() {
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+
+  // Calcular estado de cada producto
+  const productos = todosLosProductos.map(r => {
+    const f         = r.fields;
+    const venceDate = f["Fecha vencimiento"] ? parseFecha(f["Fecha vencimiento"]) : null;
+    const avisoDate = f["Fecha Aviso"]       ? parseFecha(f["Fecha Aviso"])       : null;
+    const diasVence = venceDate ? Math.floor((venceDate - hoy) / 86400000) : null;
+    const diasAviso = avisoDate ? Math.floor((avisoDate - hoy) / 86400000) : null;
+    let estado;
+    if (diasVence !== null && diasVence <= 0)          estado = "urgente";
+    else if (diasAviso !== null && diasAviso <= 0)     estado = "aviso";
+    else                                               estado = "ok";
+    return { r, f, diasVence, diasAviso, estado };
+  });
+
+  // Filtrar
+  const filtrados = filtroActual === "todos"
+    ? productos
+    : productos.filter(p => p.estado === filtroActual);
+
+  const total = todosLosProductos.length;
+  document.getElementById("inv-count").textContent =
+    `${filtrados.length} de ${total} producto${total !== 1 ? "s" : ""}`;
+
+  if (!filtrados.length) {
+    document.getElementById("inv-content").innerHTML = total === 0
+      ? `<div class="empty-state">
+           <div class="empty-icon">📦</div>
+           <p>Aún no tienes productos<br>en tu inventario</p>
+           <small>Escanea y guarda en la pestaña Escanear</small>
+         </div>`
+      : `<div class="empty-state">
+           <div class="empty-icon">🔍</div>
+           <p>No hay productos en<br>esta categoría</p>
+         </div>`;
+    return;
+  }
+
+  const html = filtrados.map((p, i) => {
+    const f     = p.f;
+    const icon  = tipoIcono[f["Tipo"]] || tipoIcono["default"];
+    const color = tipoColor[f["Tipo"]] || tipoColor["default"];
+
+    // Badge de vencimiento
+    let venceBadge = "";
+    if (p.diasVence !== null) {
+      const d   = p.diasVence;
+      const lbl = d < 0 ? `Venció hace ${Math.abs(d)}d`
+                : d === 0 ? "Vence hoy"
+                : `Vence en ${d}d`;
+      const cls = d < 0 ? "badge-vence-bad" : d <= 7 ? "badge-vence-warn" : "badge-vence-ok";
+      venceBadge = `<span class="badge ${cls}">${lbl}</span>`;
+    }
+
+    // ── COMPARADORES: UsuarioUID y UsuarioEmail en la tarjeta ──
+    const uid   = f["UsuarioUID"]   || "—";
+    const email = f["UsuarioEmail"] || "—";
+    const uidShort = uid.length > 12 ? uid.substring(0,12)+"…" : uid;
+
+    return `
+      <div class="inv-item ${p.estado}" style="animation-delay:${i*0.04}s">
+        <div class="inv-item-icon" style="background:${color}">${icon}</div>
+        <div class="inv-item-body">
+          <div class="inv-item-name">${f["Nombre"] || "Sin nombre"}</div>
+          <div class="inv-item-code">${f["CODIGO"] || "—"}</div>
+          <div class="inv-item-meta">
+            <span class="badge badge-tipo">${f["Tipo"] || ""}</span>
+            ${venceBadge}
+          </div>
+          <div class="inv-item-user">
+            <span class="badge badge-uid" title="${uid}">UID: ${uidShort}</span>
+            <span class="badge badge-email">✉️ ${email}</span>
+          </div>
+        </div>
+        <div class="inv-item-time">${formatFecha(f["Fecha vencimiento"])}</div>
+      </div>`;
+  }).join("");
+
+  document.getElementById("inv-content").innerHTML = `<div class="inv-list">${html}</div>`;
+}
+
+function actualizarBadge() {
+  const cnt = document.getElementById("tab-count");
+  if (todosLosProductos.length > 0) {
+    cnt.textContent = todosLosProductos.length;
+    cnt.classList.add("visible");
+  } else {
+    cnt.classList.remove("visible");
+  }
+}
 </script>
 </body>
 </html>
