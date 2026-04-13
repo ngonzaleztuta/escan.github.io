@@ -1,648 +1,1091 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Escáner de Inventario</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Guardian del Vencimiento — Inventario</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #f4f6f9;
-    --white: #ffffff;
-    --primary: #1565C0;
-    --primary-light: #e3f0ff;
-    --green: #2e7d32;
-    --green-light: #e8f5e9;
-    --red: #c62828;
-    --red-light: #ffebee;
-    --blue-info: #1565c0;
-    --blue-info-light: #e3f2fd;
-    --text: #1a1a2e;
-    --muted: #6b7280;
-    --border: #e2e8f0;
-    --shadow: 0 2px 12px rgba(0,0,0,0.08);
-    --tab-active: #1565C0;
-    --tab-inactive: #9ca3af;
-    --radius: 14px;
-  }
+* { margin:0; padding:0; box-sizing:border-box; }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg:        #0d0f14;
+  --surface:   #161a23;
+  --surface2:  #1e2432;
+  --border:    rgba(255,255,255,0.07);
+  --accent:    #00e5a0;
+  --accent2:   #00b8ff;
+  --warn:      #ffb300;
+  --danger:    #ff4d6d;
+  --text:      #e8eaf0;
+  --muted:     #7a8099;
+  --radius:    14px;
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+}
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    min-height: 100vh;
-    padding-bottom: 80px;
-  }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 40px;
+}
 
-  /* ── TOP HEADER ── */
-  .header {
-    background: var(--primary);
-    color: #fff;
-    padding: 18px 16px 14px;
-    text-align: center;
-    font-size: 17px;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 8px rgba(21,101,192,0.25);
-  }
+/* ── TOPBAR ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top:0; z-index:100;
+}
+.logo {
+  font-family: var(--font-head);
+  font-size: 20px;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+}
+.logo span { color: var(--text); }
+#userEmail {
+  font-size: 12px;
+  color: var(--muted);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.btn-logout {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-logout:hover { border-color: var(--danger); color: var(--danger); }
 
-  /* ── BOTTOM TABS ── */
-  .bottom-tabs {
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    background: var(--white);
-    border-top: 1px solid var(--border);
-    display: flex;
-    z-index: 100;
-    box-shadow: 0 -2px 12px rgba(0,0,0,0.07);
-  }
-  .tab-btn {
-    flex: 1;
-    padding: 10px 0 12px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    transition: all 0.2s;
-  }
-  .tab-btn .tab-icon { font-size: 22px; }
-  .tab-btn .tab-label {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--tab-inactive);
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
-    transition: color 0.2s;
-  }
-  .tab-btn.active .tab-label { color: var(--tab-active); }
-  .tab-btn .tab-indicator {
-    width: 0; height: 3px;
-    background: var(--tab-active);
-    border-radius: 99px;
-    transition: width 0.25s ease;
-    margin-top: 2px;
-  }
-  .tab-btn.active .tab-indicator { width: 32px; }
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  gap: 4px;
+}
+.tab {
+  flex: 1;
+  padding: 12px 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  text-align: center;
+}
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
-  /* ── PAGES ── */
-  .page { display: none; padding: 16px; }
-  .page.active { display: block; }
+/* ── SECTIONS ── */
+.section { display:none; padding: 16px; max-width: 480px; margin: 0 auto; }
+.section.visible { display: block; }
 
-  /* ── SCANNER PAGE ── */
-  #scanner-container {
-    width: 100%;
-    max-width: 440px;
-    margin: 0 auto 14px;
-    border-radius: var(--radius);
-    overflow: hidden;
-    background: #000;
-    position: relative;
-    height: 220px;
-    box-shadow: var(--shadow);
-  }
-  #scanner-container video,
-  #scanner-container canvas {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    position: absolute; top: 0; left: 0;
-  }
-  .scan-overlay {
-    position: absolute; inset: 0;
-    z-index: 9;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .scan-frame {
-    width: 200px; height: 100px;
-    border: 2px solid rgba(255,255,255,0.5);
-    border-radius: 8px;
-    position: relative;
-  }
-  .scan-frame::before, .scan-frame::after {
-    content: '';
-    position: absolute;
-    width: 20px; height: 20px;
-    border-color: #00e676;
-    border-style: solid;
-  }
-  .scan-frame::before { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
-  .scan-frame::after  { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
-  .linea-scan {
-    position: absolute;
-    left: 10%; right: 10%; top: 50%;
-    height: 2px;
-    background: #00e676;
-    box-shadow: 0 0 10px #00e676, 0 0 20px rgba(0,230,118,0.4);
-    z-index: 10;
-    animation: scan 2s ease-in-out infinite;
-  }
-  @keyframes scan {
-    0%   { top: 20%; opacity: 1; }
-    50%  { top: 80%; opacity: 0.8; }
-    100% { top: 20%; opacity: 1; }
-  }
+/* ── AUTH SCREEN ── */
+#authScreen {
+  display: none;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+}
+#authScreen.visible { display: flex; }
+.auth-box {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px 28px;
+}
+.auth-logo {
+  font-family: var(--font-head);
+  font-size: 32px;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.auth-logo span { color: var(--text); }
+.auth-subtitle {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 28px;
+}
+.auth-tabs {
+  display: flex;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 24px;
+  gap: 4px;
+}
+.auth-tab {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.auth-tab.active { background: var(--surface2); color: var(--accent); }
+.auth-error {
+  background: rgba(255,77,109,0.12);
+  border: 1px solid rgba(255,77,109,0.3);
+  color: var(--danger);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-top: 12px;
+  display: none;
+}
+.auth-error.visible { display: block; }
 
-  .btn-row {
-    max-width: 440px;
-    margin: 0 auto 14px;
-    display: flex; gap: 10px;
-  }
-  .btn {
-    flex: 1; padding: 13px 10px;
-    border: none; border-radius: 10px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px; font-weight: 700;
-    cursor: pointer;
-    transition: transform 0.1s, opacity 0.15s;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-  }
-  .btn:active { transform: scale(0.97); opacity: 0.85; }
-  .btn-escanear { background: var(--primary); color: #fff; }
-  .btn-detener  { background: var(--red); color: #fff; display: none; }
-  .btn-guardar  { background: var(--green); color: #fff; width: 100%; }
+/* ── CARD ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.card-title {
+  font-family: var(--font-head);
+  font-size: 15px;
+  color: var(--accent);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-  .card {
-    background: var(--white);
-    border-radius: var(--radius);
-    padding: 18px;
-    max-width: 440px;
-    margin: 0 auto 14px;
-    box-shadow: var(--shadow);
-  }
-  .campo { margin-bottom: 14px; }
-  label {
-    display: block; font-size: 11px; color: var(--muted);
-    margin-bottom: 5px; text-transform: uppercase;
-    letter-spacing: 0.6px; font-weight: 600;
-  }
-  input, select {
-    width: 100%; padding: 10px 12px;
-    border: 1.5px solid var(--border);
-    border-radius: 9px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px; color: var(--text);
-    background: #fafbfc;
-    transition: border-color 0.2s;
-  }
-  input:focus, select:focus {
-    outline: none; border-color: var(--primary); background: #fff;
-  }
-  #codigoDetectado {
-    background: var(--green-light);
-    border-color: #a5d6a7;
-    color: var(--green);
-    font-family: 'DM Mono', monospace;
-    font-weight: 500;
-  }
+/* ── SCANNER ── */
+#scanner-container {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  position: relative;
+  height: 200px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+}
+#scanner-container video,
+#scanner-container canvas {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  position: absolute; top:0; left:0;
+}
+.scan-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 5;
+}
+.scan-frame {
+  width: 220px; height: 120px;
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: 0 0 0 2000px rgba(0,0,0,0.4);
+  position: relative;
+}
+.scan-frame::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  top: 0;
+  height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent);
+  animation: scanline 2s ease-in-out infinite;
+}
+@keyframes scanline {
+  0%,100% { top: 0; }
+  50%      { top: calc(100% - 2px); }
+}
+.scan-idle {
+  position: absolute; inset:0;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.scan-idle-icon { font-size: 40px; }
 
-  #estado {
-    text-align: center; font-size: 14px; font-weight: 500;
-    padding: 11px 14px; border-radius: 9px;
-    margin-top: 10px; display: none;
-  }
-  .exito   { background: var(--green-light);   color: var(--green); }
-  .error   { background: var(--red-light);     color: var(--red); }
-  .cargando{ background: var(--blue-info-light);color: var(--blue-info); }
+/* ── FORM ── */
+.campo { margin-bottom: 14px; }
+label {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 600;
+}
+input, select {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: var(--font-body);
+  color: var(--text);
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+input::placeholder { color: var(--muted); }
+select option { background: var(--surface2); }
+#codigoDetectado {
+  background: rgba(0,229,160,0.06);
+  border-color: rgba(0,229,160,0.3);
+  color: var(--accent);
+  font-weight: 600;
+}
 
-  /* ── INVENTARIO PAGE ── */
-  .inv-header {
-    max-width: 440px;
-    margin: 0 auto 14px;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .inv-title {
-    font-size: 18px; font-weight: 700; color: var(--text);
-  }
-  .inv-count {
-    font-size: 13px; color: var(--muted); font-weight: 500;
-  }
-  .btn-refresh {
-    background: var(--primary-light); color: var(--primary);
-    border: none; border-radius: 8px;
-    padding: 8px 14px; font-family: 'DM Sans', sans-serif;
-    font-size: 13px; font-weight: 700; cursor: pointer;
-    display: flex; align-items: center; gap: 5px;
-    transition: background 0.2s;
-  }
-  .btn-refresh:hover { background: #c8deff; }
-  .btn-refresh.spinning .refresh-icon { animation: spin 0.7s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .refresh-icon { display: inline-block; }
+/* ── BUTTONS ── */
+.btn-row { display: flex; gap: 10px; margin-bottom: 12px; }
+.btn {
+  flex: 1;
+  padding: 13px 10px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--accent); color: #000; }
+.btn-danger  { background: var(--danger); color: #fff; display: none; }
+.btn-save    { background: var(--accent2); color: #000; width:100%; margin-top:4px; }
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
 
-  /* Filter bar */
-  .filter-bar {
-    max-width: 440px;
-    margin: 0 auto 14px;
-    display: flex; gap: 8px; overflow-x: auto;
-    padding-bottom: 4px; scrollbar-width: none;
-  }
-  .filter-bar::-webkit-scrollbar { display: none; }
-  .filter-chip {
-    white-space: nowrap;
-    padding: 6px 14px;
-    border-radius: 99px;
-    border: 1.5px solid var(--border);
-    background: var(--white);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px; font-weight: 600;
-    color: var(--muted); cursor: pointer;
-    transition: all 0.15s;
-  }
-  .filter-chip.active {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: #fff;
-  }
+/* ── STATUS ── */
+#estado {
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  display: none;
+  margin-top: 12px;
+}
+.exito   { background: rgba(0,229,160,0.1); color: var(--accent); border: 1px solid rgba(0,229,160,0.25); display:block!important; }
+.error   { background: rgba(255,77,109,0.1); color: var(--danger); border: 1px solid rgba(255,77,109,0.25); display:block!important; }
+.cargando{ background: rgba(0,184,255,0.1); color: var(--accent2); border: 1px solid rgba(0,184,255,0.25); display:block!important; }
 
-  /* Item cards */
-  .inv-list {
-    max-width: 440px;
-    margin: 0 auto;
-    display: flex; flex-direction: column; gap: 10px;
-  }
-  .inv-item {
-    background: var(--white);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    box-shadow: var(--shadow);
-    display: flex; align-items: flex-start; gap: 12px;
-    animation: slideIn 0.25s ease both;
-  }
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .inv-item-icon {
-    width: 42px; height: 42px;
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    flex-shrink: 0;
-  }
-  .inv-item-body { flex: 1; min-width: 0; }
-  .inv-item-name {
-    font-size: 15px; font-weight: 700; color: var(--text);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    margin-bottom: 3px;
-  }
-  .inv-item-code {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px; color: var(--muted);
-    margin-bottom: 6px;
-  }
-  .inv-item-meta {
-    display: flex; gap: 8px; flex-wrap: wrap;
-  }
-  .badge {
-    display: inline-flex; align-items: center; gap: 3px;
-    padding: 3px 9px; border-radius: 99px;
-    font-size: 11px; font-weight: 600;
-  }
-  .badge-tipo { background: #ede9fe; color: #5b21b6; }
-  .badge-vence { background: #fef9c3; color: #854d0e; }
-  .badge-aviso { background: #fee2e2; color: #991b1b; }
-  .badge-ok    { background: var(--green-light); color: var(--green); }
+/* ── INVENTORY LIST ── */
+.inv-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.inv-title {
+  font-family: var(--font-head);
+  font-size: 18px;
+  color: var(--text);
+}
+.inv-count {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.filter-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.filter-row::-webkit-scrollbar { display: none; }
+.chip {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.chip.active { background: var(--accent); border-color: var(--accent); color: #000; }
 
-  /* Empty / loading states */
-  .empty-state {
-    text-align: center; padding: 48px 20px;
-    color: var(--muted);
-    max-width: 440px; margin: 0 auto;
-  }
-  .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
-  .empty-state p { font-size: 15px; font-weight: 500; }
+.producto-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+.producto-card.urgente { border-color: rgba(255,77,109,0.5); }
+.producto-card.aviso   { border-color: rgba(255,179,0,0.5); }
+.producto-card.ok      { border-color: var(--border); }
 
-  .skeleton {
-    max-width: 440px; margin: 0 auto;
-    display: flex; flex-direction: column; gap: 10px;
-  }
-  .skel-card {
-    background: var(--white);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    box-shadow: var(--shadow);
-    display: flex; gap: 12px;
-  }
-  .skel-icon { width: 42px; height: 42px; border-radius: 10px; background: #e9ecef; flex-shrink: 0; }
-  .skel-body { flex: 1; display: flex; flex-direction: column; gap: 8px; padding-top: 4px; }
-  .skel-line {
-    height: 12px; border-radius: 6px;
-    background: linear-gradient(90deg, #e9ecef 25%, #f3f4f6 50%, #e9ecef 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.4s infinite;
-  }
-  .skel-line.short { width: 55%; }
-  .skel-line.xshort { width: 35%; }
-  @keyframes shimmer { to { background-position: -200% 0; } }
+.prod-accent-bar {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  border-radius: 14px 0 0 14px;
+}
+.urgente .prod-accent-bar { background: var(--danger); }
+.aviso   .prod-accent-bar { background: var(--warn); }
+.ok      .prod-accent-bar { background: var(--accent); }
+
+.prod-body { padding-left: 12px; }
+.prod-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+.prod-nombre {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+}
+.prod-tipo {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--surface2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.prod-codigo {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  font-family: monospace;
+}
+.countdown-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.countdown-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 6px 10px;
+  min-width: 52px;
+}
+.countdown-num {
+  font-family: var(--font-head);
+  font-size: 22px;
+  line-height: 1;
+}
+.countdown-lbl {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.urgente .countdown-num { color: var(--danger); }
+.aviso   .countdown-num { color: var(--warn); }
+.ok      .countdown-num { color: var(--accent); }
+
+.prod-fecha {
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: auto;
+  text-align: right;
+}
+.prod-fecha strong { display: block; color: var(--text); font-size: 13px; }
+
+.loading-msg {
+  text-align: center;
+  color: var(--muted);
+  padding: 40px 20px;
+  font-size: 14px;
+}
+.error-msg { color: var(--danger); }
+
+/* ── NOTIF BANNER ── */
+.notif-banner {
+  background: rgba(0,229,160,0.08);
+  border: 1px solid rgba(0,229,160,0.2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.notif-banner button {
+  margin-left: auto;
+  background: var(--accent);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #000;
+  white-space: nowrap;
+}
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center;
+  padding: 50px 20px;
+}
+.empty-icon { font-size: 56px; margin-bottom: 12px; }
+.empty-title { font-family: var(--font-head); font-size: 20px; margin-bottom: 6px; }
+.empty-sub { color: var(--muted); font-size: 14px; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 </style>
 </head>
 <body>
 
-<div class="header"> Escáner de Inventario</div>
+<!-- ════════════════ AUTH SCREEN ════════════════ -->
+<div id="authScreen" class="visible">
+  <div class="auth-box">
+    <div class="auth-logo">Guardian Del <span>Vencimiento</span></div>
+    <div class="auth-subtitle">Controla tus vencimientos con inteligencia</div>
 
-<!-- ════ PAGE: ESCANEAR ════ -->
-<div class="page active" id="page-scan">
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Ingresar</button>
+      <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Registrarse</button>
+    </div>
 
-  <div id="scanner-container">
-    <div class="scan-overlay"><div class="scan-frame"></div></div>
-    <div class="linea-scan"></div>
-  </div>
-
-  <div class="btn-row">
-    <button class="btn btn-escanear" id="btnEscanear" onclick="iniciarEscaner()"> Activar cámara</button>
-    <button class="btn btn-detener"  id="btnDetener"  onclick="detenerEscaner()"> Detener</button>
-  </div>
-
-  <div class="card">
     <div class="campo">
-      <label>Código escaneado</label>
-      <input type="text" id="codigoDetectado" placeholder="Escanea un código..." readonly />
+      <label>Correo electrónico</label>
+      <input type="email" id="authEmail" placeholder="tucorreo@gmail.com" />
     </div>
     <div class="campo">
-      <label>Nombre del producto</label>
-      <input type="text" id="nombre"  />
+      <label>Contraseña</label>
+      <input type="password" id="authPass" placeholder="Mínimo 6 caracteres" onkeydown="if(event.key==='Enter')authAction()" />
     </div>
-    <div class="campo">
-      <label>Tipo</label>
-      <select id="tipo">
-        <option value="Alimento">Alimento</option>
-        <option value="Bebida">Bebida</option>
-        <option value="Lacteos">Lácteos</option>
-        <option value="Condimentos">Condimentos</option>
-        <option value="Snacks">Snacks</option>
-        <option value="Enlatados">Enlatados</option>
-        <option value="Granos">Granos</option>
-        <option value="Panaderia">Panadería</option>
-      </select>
-    </div>
-    <div class="campo">
-      <label>Fecha de vencimiento</label>
-      <input type="date" id="fechaVence" />
-    </div>
-    <div class="campo">
-      <label>Fecha de aviso</label>
-      <input type="date" id="fechaAviso" />
-    </div>
-    <button class="btn btn-guardar" onclick="guardarEnAirtable()"> Guardar en Airtable</button>
-    <div id="estado"></div>
-  </div>
 
-</div>
+    <button class="btn btn-primary" style="width:100%;margin-top:4px;" onclick="authAction()" id="btnAuthAction">Ingresar</button>
 
-<!-- ════ PAGE: INVENTARIO ════ -->
-<div class="page" id="page-inv">
-
-  <div class="inv-header">
-    <div>
-      <div class="inv-title">Inventario</div>
-      <div class="inv-count" id="inv-count">Cargando...</div>
+    <div style="display:flex;align-items:center;gap:10px;margin:16px 0 12px;">
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+      <span style="font-size:12px;color:var(--muted);">o continúa con</span>
+      <div style="flex:1;height:1px;background:var(--border);"></div>
     </div>
-    <button class="btn-refresh" id="btnRefresh" onclick="cargarInventario()">
-      <span class="refresh-icon">🔄</span> Actualizar
+
+    <button onclick="loginConGoogle()" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:border-color 0.2s;" onmouseover="this.style.borderColor='#4285F4'" onmouseout="this.style.borderColor='var(--border)'">
+      <svg width="18" height="18" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
+      Continuar con Google
     </button>
+
+    <div class="auth-error" id="authError"></div>
+  </div>
+</div>
+
+<!-- ════════════════ APP SCREEN ════════════════ -->
+<div id="appScreen" style="display:none;">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="logo">Guardian Del <span>Vencimiento</span></div>
+    <div id="userEmail" style="font-size:12px;color:var(--muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+    <button class="btn-logout" onclick="logout()">Salir</button>
   </div>
 
-  <div class="filter-bar" id="filter-bar">
-    <button class="filter-chip active" data-tipo="Todos" onclick="filtrar(this)">Todos</button>
-    <button class="filter-chip" data-tipo="Alimento"   onclick="filtrar(this)">Alimento</button>
-    <button class="filter-chip" data-tipo="Bebida"     onclick="filtrar(this)">Bebida</button>
-    <button class="filter-chip" data-tipo="Lacteos"    onclick="filtrar(this)">Lácteos</button>
-    <button class="filter-chip" data-tipo="Condimentos" onclick="filtrar(this)">Condimentos</button>
-    <button class="filter-chip" data-tipo="Snacks"     onclick="filtrar(this)">Snacks</button>
-    <button class="filter-chip" data-tipo="Enlatados"  onclick="filtrar(this)">Enlatados</button>
-    <button class="filter-chip" data-tipo="Granos"     onclick="filtrar(this)">Granos</button>
-    <button class="filter-chip" data-tipo="Panaderia"  onclick="filtrar(this)">Panadería</button>
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" id="tabEscanear" onclick="switchTab('escanear')"> Escanear</button>
+    <button class="tab" id="tabInventario" onclick="switchTab('inventario')"> Inventario</button>
   </div>
 
-  <div id="inv-content"></div>
+  <!-- ── SCAN SECTION ── -->
+  <div class="section visible" id="sectionEscanear">
+
+    <!-- Notificaciones -->
+    <div class="notif-banner" id="notifBanner" style="display:none;">
+      <span>🔔 Activa notificaciones para recibir alertas de vencimiento</span>
+      <button onclick="pedirNotificaciones()">Activar</button>
+    </div>
+
+    <!-- Scanner -->
+    <div class="card" style="padding:14px;">
+      <div class="card-title"> Escáner de código de barras</div>
+      <div id="scanner-container">
+        <div id="scanIdle" class="scan-idle">
+          <div class="scan-idle-icon"></div>
+          <div>Presiona "Activar cámara"</div>
+        </div>
+        <div class="scan-overlay" id="scanOverlay" style="display:none;">
+          <div class="scan-frame"></div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnEscanear" onclick="iniciarEscaner()"> Activar cámara</button>
+        <button class="btn btn-danger"  id="btnDetener"  onclick="detenerEscaner()"> Detener</button>
+      </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="card">
+      <div class="card-title">Datos del producto</div>
+
+      <div class="campo">
+        <label>Código escaneado</label>
+        <input type="text" id="codigoDetectado" placeholder="Escanea o escribe un código…" />
+      </div>
+
+      <div class="campo">
+        <label>Nombre del producto</label>
+        <input type="text" id="nombre" placeholder="Ej: Leche entera 1L" />
+      </div>
+
+<div class="campo">
+        <label>Tipo</label>
+        <select id="tipo">
+          <option value="Alimento">Alimento</option>
+          <option value="Bebida">Bebida</option>
+          <option value="Lacteos">Lácteos</option>
+          <option value="Condimentos">Condimentos</option>
+          <option value="Snacks">Snacks</option>
+          <option value="Enlatados">Enlatados</option>
+          <option value="Granos">Granos</option>
+          <option value="Panaderia">Panadería</option>
+        </select>
+      </div>
+
+
+      <div style="display:flex;gap:10px;">
+        <div class="campo" style="flex:1;">
+          <label>Fecha de vencimiento</label>
+          <input type="date" id="fechaVence" />
+        </div>
+        <div class="campo" style="flex:1;">
+          <label>Fecha de aviso</label>
+          <input type="date" id="fechaAviso" />
+        </div>
+      </div>
+
+      <button class="btn btn-save" onclick="guardarEnAirtable()"> Guardar en Airtable</button>
+      <div id="estado"></div>
+    </div>
+  </div>
+
+  <!-- ── INVENTORY SECTION ── -->
+  <div class="section" id="sectionInventario">
+    <div class="inv-header">
+      <div class="inv-title">Mi inventario</div>
+      <div class="inv-count" id="invCount">— productos</div>
+    </div>
+
+    <div class="filter-row" id="filterRow">
+      <div class="chip active" onclick="filtrar('todos',this)">Todos</div>
+      <div class="chip urgente-chip" onclick="filtrar('urgente',this)"> Urgente</div>
+      <div class="chip aviso-chip"   onclick="filtrar('aviso',this)"> Por vencer</div>
+      <div class="chip ok-chip"      onclick="filtrar('ok',this)">OK</div>
+    </div>
+
+    <div id="listaInventario">
+      <div class="loading-msg">Carga tu inventario en la pestaña Escanear</div>
+    </div>
+  </div>
 
 </div>
 
-<!-- ════ BOTTOM TABS ════ -->
-<div class="bottom-tabs">
-  <button class="tab-btn active" id="tab-scan" onclick="cambiarTab('scan')">
-    <span class="tab-icon"></span>
-    <span class="tab-label">Escanear</span>
-    <div class="tab-indicator"></div>
-  </button>
-  <button class="tab-btn" id="tab-inv" onclick="cambiarTab('inv')">
-    <span class="tab-icon"></span>
-    <span class="tab-label">Inventario</span>
-    <div class="tab-indicator"></div>
-  </button>
-</div>
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  FIREBASE SDK (compat — sin bundler)               -->
+<!-- ═══════════════════════════════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 
 <script>
-  // ── Config Airtable ──
-  const TOKEN   = "patH2lLXW4YJYez4a.cd0772ea1837b4cdbd8579e6840f7e36bcb17e0214ab2fafa10252d6d2fd2cea";
+// ══════════════════════════════════════════════════════════════
+//  🔧 CONFIGURACIÓN — Reemplaza con tus credenciales de Firebase
+// ══════════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyBBariTES1Vgu67k4DKz9HmXgC_S0DqdTE",
+  authDomain: "scan-efc75.firebaseapp.com",
+  projectId: "scan-efc75",
+  storageBucket: "scan-efc75.firebasestorage.app",
+  messagingSenderId: "925479664370",
+  appId: "1:925479664370:web:dffbd0dec95aa32bbfae6b",
+  measurementId: "G-LGJ125S708"
+};
+
+
+// ── Airtable ──
+ const TOKEN   = "patH2lLXW4YJYez4a.cd0772ea1837b4cdbd8579e6840f7e36bcb17e0214ab2fafa10252d6d2fd2cea";
   const BASE_ID = "appNGlPOc4Q3DKGNC";
   const TABLA   = "Table 1";
 
-  let escaneando = false;
-  let ultimoCodigo = "";
-  let todosLosItems = [];
-  let filtroActual = "Todos";
 
-  // ── Tabs ──
-  function cambiarTab(tab) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('page-' + tab).classList.add('active');
-    document.getElementById('tab-' + tab).classList.add('active');
-    if (tab === 'inv') cargarInventario();
+// ════════════════ FIREBASE INIT ════════════════
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+// ════════════════ ESTADO ════════════════
+let currentUser   = null;
+let escaneando    = false;
+let ultimoCodigo  = "";
+let todosLosProductos = [];
+let filtroActivo  = "todos";
+
+// ════════════════ AUTH STATE ════════════════
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  if (user) {
+    document.getElementById("authScreen").classList.remove("visible");
+    document.getElementById("authScreen").style.display = "none";
+    document.getElementById("appScreen").style.display  = "block";
+    document.getElementById("userEmail").textContent = user.email;
+    cargarInventario();
+    verificarPermisoNotificaciones();
+  } else {
+    document.getElementById("authScreen").style.display = "flex";
+    document.getElementById("authScreen").classList.add("visible");
+    document.getElementById("appScreen").style.display  = "none";
   }
+});
 
-  // ── Escáner ──
-  function iniciarEscaner() {
-    Quagga.init({
-      inputStream: {
-        name: "Live", type: "LiveStream",
-        target: document.getElementById("scanner-container"),
-        constraints: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 480 } }
-      },
-      decoder: { readers: ["ean_reader","ean_8_reader","code_128_reader","code_39_reader","upc_reader"] }
-    }, function(err) {
-      if (err) { mostrarEstado(" No se pudo acceder a la cámara: " + err, "error"); return; }
-      Quagga.start();
-      escaneando = true;
-      document.getElementById("btnEscanear").style.display = "none";
-      document.getElementById("btnDetener").style.display = "block";
-    });
-    Quagga.onDetected(function(result) {
-      const codigo = result.codeResult.code;
-      if (codigo !== ultimoCodigo) {
-        ultimoCodigo = codigo;
-        document.getElementById("codigoDetectado").value = codigo;
-        if (navigator.vibrate) navigator.vibrate(200);
-        detenerEscaner();
-      }
-    });
+// ════════════════ AUTH HELPERS ════════════════
+let authMode = "login";
+
+function switchAuthTab(mode) {
+  authMode = mode;
+  document.getElementById("tabLogin").classList.toggle("active",    mode === "login");
+  document.getElementById("tabRegister").classList.toggle("active", mode === "register");
+  document.getElementById("btnAuthAction").textContent = mode === "login" ? "Ingresar" : "Registrarse";
+  clearAuthError();
+}
+
+function authAction() {
+  const email = document.getElementById("authEmail").value.trim();
+  const pass  = document.getElementById("authPass").value;
+  clearAuthError();
+  if (!email || !pass) { showAuthError("Completa todos los campos"); return; }
+  if (authMode === "login") {
+    auth.signInWithEmailAndPassword(email, pass)
+      .catch(e => showAuthError(tradError(e.code)));
+  } else {
+    auth.createUserWithEmailAndPassword(email, pass)
+      .catch(e => showAuthError(tradError(e.code)));
   }
+}
 
-  function detenerEscaner() {
-    if (escaneando) { Quagga.stop(); escaneando = false; }
-    document.getElementById("btnEscanear").style.display = "block";
-    document.getElementById("btnDetener").style.display  = "none";
-  }
+function logout() {
+  detenerEscaner();
+  auth.signOut();
+}
 
-  // ── Guardar ──
-  async function guardarEnAirtable() {
-    const codigo     = document.getElementById("codigoDetectado").value.trim();
-    const nombre     = document.getElementById("nombre").value.trim();
-    const tipo       = document.getElementById("tipo").value;
-    const fechaVence = document.getElementById("fechaVence").value;
-    const fechaAviso = document.getElementById("fechaAviso").value;
+function loginConGoogle() {
+  clearAuthError();
+  var provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider)
+    .catch(function(e) { showAuthError(tradError(e.code)); });
+}
 
-    if (!codigo)   { mostrarEstado("Primero escanea un código", "error"); return; }
-    if (!nombre)   { mostrarEstado(" Ingresa el nombre del producto", "error"); return; }
-    if (!fechaVence || !fechaAviso) { mostrarEstado("Ingresa las fechas", "error"); return; }
+function showAuthError(msg) {
+  const el = document.getElementById("authError");
+  el.textContent = msg;
+  el.classList.add("visible");
+}
+function clearAuthError() {
+  const el = document.getElementById("authError");
+  el.textContent = "";
+  el.classList.remove("visible");
+}
 
-    mostrarEstado(" Guardando...", "cargando");
-
-    try {
-      const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLA)}`, {
-        method: "POST",
-        headers: { "Authorization": "Bearer " + TOKEN, "Content-Type": "application/json" },
-        body: JSON.stringify({ fields: {
-          "CODIGO": String(codigo), "Nombre": nombre, "Tipo": tipo,
-          "Fecha vencimiento": fechaVence, "Fecha Aviso": fechaAviso
-        }})
-      });
-      if (res.ok) {
-        mostrarEstado(" ¡Guardado exitosamente en Airtable!", "exito");
-        limpiarFormulario();
-      } else {
-        const err = await res.json();
-        mostrarEstado(" Error: " + (err.error?.message || res.status), "error");
-      }
-    } catch (e) {
-      mostrarEstado(" Error de conexión: " + e.message, "error");
-    }
-  }
-
-  function limpiarFormulario() {
-    ["codigoDetectado","nombre","fechaVence","fechaAviso"].forEach(id => document.getElementById(id).value = "");
-    document.getElementById("tipo").value = "Alimento";
-    ultimoCodigo = "";
-  }
-
-  function mostrarEstado(msg, tipo) {
-    const el = document.getElementById("estado");
-    el.textContent = msg; el.className = tipo; el.style.display = "block";
-    if (tipo === "exito") setTimeout(() => { el.style.display = "none"; }, 3000);
-  }
-
-  // ── Inventario ──
-  
-    
-  ;
-  const tipoColor = {
-    "Alimento":"#fff3e0","Bebida":"#e3f2fd","Lacteos":"#f3e5f5","Condimentos":"#e8f5e9",
-    "Snacks":"#fce4ec","Enlatados":"#e0f2f1","Granos":"#fffde7","Panaderia":"#fbe9e7",
-    "default":"#f5f5f5"
+function tradError(code) {
+  const m = {
+    "auth/user-not-found":       "No existe una cuenta con ese correo",
+    "auth/wrong-password":       "Contraseña incorrecta",
+    "auth/email-already-in-use": "Ese correo ya está registrado",
+    "auth/weak-password":        "La contraseña debe tener al menos 6 caracteres",
+    "auth/invalid-email":        "Correo inválido",
+    "auth/invalid-credential":   "Correo o contraseña incorrectos",
+    "auth/too-many-requests":    "Demasiados intentos. Intenta más tarde"
   };
+  return m[code] || ("Error: " + code);
+}
 
-  async function cargarInventario() {
-    const btn = document.getElementById("btnRefresh");
-    btn.classList.add("spinning");
-    document.getElementById("inv-content").innerHTML = skeletonHTML();
-    document.getElementById("inv-count").textContent = "Cargando...";
+// ════════════════ TABS ════════════════
+function switchTab(tab) {
+  document.getElementById("tabEscanear").classList.toggle("active",    tab==="escanear");
+  document.getElementById("tabInventario").classList.toggle("active",  tab==="inventario");
+  document.getElementById("sectionEscanear").classList.toggle("visible",   tab==="escanear");
+  document.getElementById("sectionInventario").classList.toggle("visible", tab==="inventario");
+  if (tab === "inventario") cargarInventario();
+}
 
-    try {
-      let url = `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLA)}?pageSize=100`;
-      const res = await fetch(url, { headers: { "Authorization": "Bearer " + TOKEN } });
-      const data = await res.json();
-      todosLosItems = (data.records || []).map(r => ({ id: r.id, ...r.fields }));
-      // Sort by creation: newest first (Airtable returns by created by default)
-      todosLosItems.reverse();
-      renderInventario();
-    } catch (e) {
-      document.getElementById("inv-content").innerHTML =
-        `<div class="empty-state"><div class="empty-icon"></div><p>Error al cargar: ${e.message}</p></div>`;
-      document.getElementById("inv-count").textContent = "";
+// ════════════════ ESCÁNER ════════════════
+function iniciarEscaner() {
+  Quagga.init({
+    inputStream: {
+      name: "Live", type: "LiveStream",
+      target: document.getElementById("scanner-container"),
+      constraints: { facingMode:"environment", width:{ideal:640}, height:{ideal:480} }
+    },
+    decoder: { readers:["ean_reader","ean_8_reader","code_128_reader","code_39_reader","upc_reader"] }
+  }, function(err) {
+    if (err) { mostrarEstado("❌ No se pudo acceder a la cámara: " + err, "error"); return; }
+    Quagga.start();
+    escaneando = true;
+    document.getElementById("btnEscanear").style.display = "none";
+    document.getElementById("btnDetener").style.display  = "flex";
+    document.getElementById("scanIdle").style.display    = "none";
+    document.getElementById("scanOverlay").style.display = "flex";
+  });
+
+  Quagga.onDetected(function(result) {
+    var codigo = result.codeResult.code;
+    if (codigo !== ultimoCodigo) {
+      ultimoCodigo = codigo;
+      document.getElementById("codigoDetectado").value = codigo;
+      if (navigator.vibrate) navigator.vibrate([80,40,80]);
+      detenerEscaner();
     }
-    btn.classList.remove("spinning");
+  });
+}
+
+function detenerEscaner() {
+  if (escaneando) {
+    try { Quagga.stop(); } catch(e) {}
+    escaneando = false;
   }
+  document.getElementById("btnEscanear").style.display = "flex";
+  document.getElementById("btnDetener").style.display  = "none";
+  document.getElementById("scanIdle").style.display    = "flex";
+  document.getElementById("scanOverlay").style.display = "none";
+}
 
-  function filtrar(chip) {
-    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    filtroActual = chip.dataset.tipo;
-    renderInventario();
-  }
+// ════════════════ GUARDAR AIRTABLE ════════════════
+async function guardarEnAirtable() {
+  if (!currentUser) { mostrarEstado("⚠️ Inicia sesión primero", "error"); return; }
+  var codigo     = document.getElementById("codigoDetectado").value.trim();
+  var nombre     = document.getElementById("nombre").value.trim();
+  var tipo       = document.getElementById("tipo").value;
+  var fechaVence = document.getElementById("fechaVence").value;
+  var fechaAviso = document.getElementById("fechaAviso").value;
 
-  function renderInventario() {
-    const items = filtroActual === "Todos"
-      ? todosLosItems
-      : todosLosItems.filter(i => i["Tipo"] === filtroActual);
+  if (!codigo)                   { mostrarEstado(" Escanea un código primero", "error"); return; }
+  if (!nombre)                   { mostrarEstado(" Ingresa el nombre del producto", "error"); return; }
+  if (!fechaVence || !fechaAviso){ mostrarEstado(" Ingresa ambas fechas", "error"); return; }
 
-    const total = todosLosItems.length;
-    document.getElementById("inv-count").textContent =
-      filtroActual === "Todos"
-        ? `${total} producto${total !== 1 ? "s" : ""}`
-        : `${items.length} de ${total}`;
+  mostrarEstado(" Guardando...", "cargando");
 
-    if (items.length === 0) {
-      document.getElementById("inv-content").innerHTML =
-        `<div class="empty-state"><div class="empty-icon"></div><p>No hay productos${filtroActual !== 'Todos' ? ' en esta categoría' : ''}</p></div>`;
-      return;
-    }
+  var body = { fields: {
+    "CODIGO": codigo,
+    "Nombre": nombre,
+    "Tipo":   tipo,
+    "Fecha vencimiento": fechaVence,
+    "Fecha Aviso":       fechaAviso,
+    "UsuarioUID":        currentUser.uid,
+    "UsuarioEmail":      currentUser.email
+  }};
 
-    const today = new Date(); today.setHours(0,0,0,0);
-    const html = items.map((item, i) => {
-      const tipo  = item["Tipo"] || "default";
-      const icon  = tipoIcono[tipo] || tipoIcono["default"];
-      const color = tipoColor[tipo] || tipoColor["default"];
-      const nombre = item["Nombre"] || "Sin nombre";
-      const codigo = item["CODIGO"] || "—";
-      const vence  = item["Fecha vencimiento"] || null;
-      const aviso  = item["Fecha Aviso"] || null;
-
-      let venceBadge = "";
-      if (vence) {
-        const d = new Date(vence + "T00:00:00");
-        const diff = Math.round((d - today) / 86400000);
-        const label = diff < 0 ? `Venció hace ${Math.abs(diff)}d` : diff === 0 ? "Vence hoy" : `Vence en ${diff}d`;
-        const cls   = diff < 0 ? "badge-aviso" : diff <= 7 ? "badge-vence" : "badge-ok";
-        venceBadge  = `<span class="badge ${cls}"> ${label}</span>`;
+  try {
+    var res = await fetch(
+      "https://api.airtable.com/v0/" + BASE_ID + "/" + encodeURIComponent(TABLA),
+      {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + AIRTABLE_TOKEN,
+          "Content-Type":  "application/json"
+        },
+        body: JSON.stringify(body)
       }
+    );
+    if (res.ok) {
+      mostrarEstado(" ¡Guardado exitosamente en Airtable!", "exito");
+      limpiarFormulario();
+    } else {
+      var err = await res.json();
+      mostrarEstado(" " + (err.error && err.error.message ? err.error.message : res.status), "error");
+    }
+  } catch(e) {
+    mostrarEstado(" Error de conexión: " + e.message, "error");
+  }
+}
 
-      return `
-        <div class="inv-item" style="animation-delay:${i * 0.04}s">
-          <div class="inv-item-icon" style="background:${color}">${icon}</div>
-          <div class="inv-item-body">
-            <div class="inv-item-name">${nombre}</div>
-            <div class="inv-item-code">${codigo}</div>
-            <div class="inv-item-meta">
-              <span class="badge badge-tipo">${tipo}</span>
-              ${venceBadge}
-            </div>
-          </div>
-        </div>`;
-    }).join("");
+function limpiarFormulario() {
+  document.getElementById("codigoDetectado").value = "";
+  document.getElementById("nombre").value           = "";
+  document.getElementById("tipo").value             = "";
+  document.getElementById("fechaVence").value       = "";
+  document.getElementById("fechaAviso").value       = "";
+  ultimoCodigo = "";
+}
 
-    document.getElementById("inv-content").innerHTML = `<div class="inv-list">${html}</div>`;
+// ════════════════ INVENTARIO ════════════════
+async function cargarInventario() {
+  if (!currentUser) return;
+  var lista = document.getElementById("listaInventario");
+  lista.innerHTML = '<div class="loading-msg"> Cargando tu inventario…</div>';
+
+  try {
+    var formula = encodeURIComponent('AND({UsuarioUID}="' + currentUser.uid + '")');
+    var url = "https://api.airtable.com/v0/" + BASE_ID + "/" +
+              encodeURIComponent(TABLA) +
+              "?filterByFormula=" + formula +
+              "&sort[0][field]=Fecha%20vencimiento&sort[0][direction]=asc";
+
+    var res = await fetch(url, {
+      headers: { "Authorization": "Bearer " + AIRTABLE_TOKEN }
+    });
+    var data = await res.json();
+    todosLosProductos = data.records || [];
+    renderInventario();
+    verificarAvisos();
+  } catch(e) {
+    lista.innerHTML = '<div class="loading-msg error-msg"> Error al cargar: ' + e.message + '</div>';
+  }
+}
+
+function filtrar(f, el) {
+  filtroActivo = f;
+  document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+  if (el) el.classList.add("active");
+  renderInventario();
+}
+
+function renderInventario() {
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  var lista = document.getElementById("listaInventario");
+
+  // Agregar estado a cada producto
+  var productos = todosLosProductos.map(function(r) {
+    var f = r.fields;
+    var venceDate = f["Fecha vencimiento"] ? parseFecha(f["Fecha vencimiento"]) : null;
+    var avisoDate = f["Fecha Aviso"]       ? parseFecha(f["Fecha Aviso"])       : null;
+    var diasVence = venceDate ? Math.floor((venceDate - hoy) / 86400000) : null;
+    var diasAviso = avisoDate ? Math.floor((avisoDate - hoy) / 86400000) : null;
+    var estado;
+    if (diasVence !== null && diasVence <= 0)  estado = "urgente";
+    else if (diasAviso !== null && diasAviso <= 0) estado = "aviso";
+    else estado = "ok";
+    return { r:r, f:f, diasVence:diasVence, diasAviso:diasAviso, estado:estado };
+  });
+
+  // Filtrar
+  var filtrados = productos.filter(function(p) {
+    if (filtroActivo === "todos") return true;
+    return p.estado === filtroActivo;
+  });
+
+  document.getElementById("invCount").textContent = filtrados.length + " producto" + (filtrados.length !== 1 ? "s" : "");
+
+  if (!filtrados.length) {
+    lista.innerHTML =
+      '<div class="empty-state">' +
+        '<div class="empty-icon">' + (filtroActivo === "todos" ? "" : "") + '</div>' +
+        '<div class="empty-title">' + (filtroActivo === "todos" ? "Sin productos" : "Sin productos en este filtro") + '</div>' +
+        '<div class="empty-sub">' + (filtroActivo === "todos" ? "Escanea tu primer producto en la pestaña " : "Prueba otro filtro") + '</div>' +
+      '</div>';
+    return;
   }
 
-  function skeletonHTML() {
-    return `<div class="skeleton">${[1,2,3,4].map(() => `
-      <div class="skel-card">
-        <div class="skel-icon"></div>
-        <div class="skel-body">
-          <div class="skel-line"></div>
-          <div class="skel-line short"></div>
-          <div class="skel-line xshort"></div>
-        </div>
-      </div>`).join("")}</div>`;
+  lista.innerHTML = filtrados.map(function(p) {
+    return buildProductCard(p);
+  }).join("");
+}
+
+function buildProductCard(p) {
+  var f = p.f;
+  var dias = p.diasVence;
+  var estado = p.estado;
+
+  // Countdown visual
+  var dd = 0, hh = 0, mm = 0;
+  if (dias !== null) {
+    if (dias < 0) { dd = 0; }
+    else {
+      dd = dias;
+      // Para horas/minutos podríamos calcular pero usamos solo días
+    }
   }
+
+  var countdownHTML = '';
+  if (dias !== null) {
+    var abs = Math.abs(dias);
+    var label = dias < 0  ? "Venció hace " + abs + " día" + (abs!==1?"s":"")
+              : dias === 0 ? "¡Vence HOY!"
+              : "Vence en " + dias + " día" + (dias!==1?"s":"");
+    countdownHTML =
+      '<div class="countdown-row">' +
+        '<div class="countdown-box">' +
+          '<div class="countdown-num">' + Math.abs(dias) + '</div>' +
+          '<div class="countdown-lbl">días</div>' +
+        '</div>' +
+        '<div style="font-size:12px;color:var(--muted);flex:1;padding-left:8px;">' + label + '</div>' +
+      '</div>';
+  }
+
+  return (
+    '<div class="producto-card ' + estado + '">' +
+      '<div class="prod-accent-bar"></div>' +
+      '<div class="prod-body">' +
+        '<div class="prod-top">' +
+          '<div class="prod-nombre">' + (f["Nombre"] || "Sin nombre") + '</div>' +
+          '<div class="prod-tipo">' + (f["Tipo"] || "") + '</div>' +
+        '</div>' +
+        '<div class="prod-codigo">🔖 ' + (f["CODIGO"] || "—") + '</div>' +
+        countdownHTML +
+        (f["Fecha vencimiento"] ?
+          '<div style="font-size:12px;color:var(--muted);margin-top:8px;"> Vence: <strong style="color:var(--text);">' + formatFecha(f["Fecha vencimiento"]) + '</strong></div>'
+          : '') +
+      '</div>' +
+    '</div>'
+  );
+}
+
+function parseFecha(str) {
+  var partes = str.split("-");
+  return new Date(parseInt(partes[0]), parseInt(partes[1])-1, parseInt(partes[2]));
+}
+
+function formatFecha(str) {
+  if (!str) return "";
+  var p = str.split("-");
+  return p[2] + "/" + p[1] + "/" + p[0];
+}
+
+// ════════════════ NOTIFICACIONES ════════════════
+function verificarPermisoNotificaciones() {
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "default") {
+    document.getElementById("notifBanner").style.display = "flex";
+  }
+}
+
+function pedirNotificaciones() {
+  if (!("Notification" in window)) { alert("Tu navegador no soporta notificaciones"); return; }
+  Notification.requestPermission().then(function(perm) {
+    document.getElementById("notifBanner").style.display = "none";
+    if (perm === "granted") {
+      enviarNotificacion(" Guardian del Vencimiento activado", "Recibirás alertas cuando tus productos estén por vencer.");
+      verificarAvisos();
+    }
+  });
+}
+
+function verificarAvisos() {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  if (!todosLosProductos.length) return;
+
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  var avisados = JSON.parse(localStorage.getItem("ft_avisados") || "{}");
+  var hoyStr   = hoy.toISOString().split("T")[0];
+
+  todosLosProductos.forEach(function(r) {
+    var f = r.fields;
+    var avisoDate = f["Fecha Aviso"]       ? parseFecha(f["Fecha Aviso"])       : null;
+    var venceDate = f["Fecha vencimiento"] ? parseFecha(f["Fecha vencimiento"]) : null;
+    var nombre    = f["Nombre"] || "Un producto";
+    var key       = r.id + "_" + hoyStr;
+
+    if (avisados[key]) return; // ya avisado hoy
+
+    var diasAviso = avisoDate ? Math.floor((avisoDate - hoy) / 86400000) : null;
+    var diasVence = venceDate ? Math.floor((venceDate - hoy) / 86400000) : null;
+
+    if (diasAviso !== null && diasAviso <= 0 && diasVence !== null && diasVence > 0) {
+      enviarNotificacion("⚠️ Por vencer: " + nombre, "Vence el " + formatFecha(f["Fecha vencimiento"]) + ". ¡Úsalo pronto!");
+      avisados[key] = true;
+    }
+    if (diasVence !== null && diasVence === 0) {
+      enviarNotificacion("🚨 Vence HOY: " + nombre, "Recuerda revisar este producto.");
+      avisados[key] = true;
+    }
+    if (diasVence !== null && diasVence < 0) {
+      enviarNotificacion(" Vencido: " + nombre, "Venció hace " + Math.abs(diasVence) + " día(s).");
+      avisados[key] = true;
+    }
+  });
+
+  localStorage.setItem("ft_avisados", JSON.stringify(avisados));
+}
+
+function enviarNotificacion(titulo, cuerpo) {
+  if ("Notification" in window && Notification.permission === "granted") {
+    try {
+      new Notification(titulo, {
+        body: cuerpo,
+        icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>"
+      });
+    } catch(e) {}
+  }
+}
+
+// ════════════════ ESTADO FORMULARIO ════════════════
+function mostrarEstado(msg, tipo) {
+  var el = document.getElementById("estado");
+  el.textContent = msg;
+  el.className   = tipo;
+  el.style.display = "block";
+  if (tipo === "exito") {
+    setTimeout(function() { el.style.display = "none"; }, 3000);
+  }
+}
+
+// Tecla Enter en auth
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("authPass").addEventListener("keydown", function(e) {
+    if (e.key === "Enter") authAction();
+  });
+});
 </script>
 
 </body>
