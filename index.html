@@ -3,247 +3,705 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Escáner de Inventario</title>
+<title>Inventario — Scanner</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:#f4f6f9; --white:#fff; --primary:#1565C0; --primary-light:#e3f0ff;
-  --green:#2e7d32; --green-light:#e8f5e9; --red:#c62828; --red-light:#ffebee;
-  --blue-info:#1565c0; --blue-info-light:#e3f2fd;
-  --text:#1a1a2e; --muted:#6b7280; --border:#e2e8f0;
-  --shadow:0 2px 12px rgba(0,0,0,0.08); --radius:14px;
-  --warn:#e65100; --warn-light:#fff3e0;
+  --bg: #f0ede8;
+  --white: #faf9f7;
+  --primary: #1a1a1a;
+  --primary-light: #e8e5e0;
+  --accent: #c8502a;
+  --accent-light: #f5ebe7;
+  --green: #2a5c3f;
+  --green-light: #e6f0eb;
+  --red: #8b2020;
+  --red-light: #f5e8e8;
+  --blue-info: #1a3a5c;
+  --blue-info-light: #e6edf5;
+  --text: #1a1a1a;
+  --muted: #7a7570;
+  --border: #ddd9d3;
+  --shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 20px rgba(0,0,0,0.05);
+  --radius: 4px;
+  --warn: #7a4a10;
+  --warn-light: #f5ede0;
 }
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);min-height:100vh;padding-bottom:80px;}
-
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+ 
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  padding-bottom: 72px;
+  color: var(--text);
+}
+ 
 /* ══ AUTH SCREEN ══ */
-#authScreen{
-  display:none;min-height:100vh;align-items:center;justify-content:center;
-  padding:24px;background:var(--bg);
+#authScreen {
+  display: none;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
 }
-#authScreen.visible{display:flex;}
-.auth-box{
-  width:100%;max-width:380px;background:var(--white);
-  border-radius:20px;padding:36px 28px;
-  box-shadow:0 8px 40px rgba(21,101,192,0.13);
+#authScreen.visible { display: flex; }
+ 
+.auth-box {
+  width: 100%;
+  max-width: 360px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  padding: 40px 32px;
 }
-.auth-logo{font-size:26px;font-weight:800;color:var(--primary);margin-bottom:4px;}
-.auth-logo span{color:var(--text);}
-.auth-subtitle{color:var(--muted);font-size:14px;margin-bottom:28px;}
-.auth-tabs{
-  display:flex;background:var(--bg);border-radius:10px;
-  padding:4px;margin-bottom:24px;gap:4px;
+ 
+.auth-logo {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
 }
-.auth-tab{
-  flex:1;padding:8px;border:none;border-radius:8px;background:transparent;
-  color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;
-  font-weight:600;cursor:pointer;transition:all 0.2s;
+.auth-heading {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 28px;
+  line-height: 1.1;
 }
-.auth-tab.active{background:var(--white);color:var(--primary);box-shadow:0 1px 6px rgba(0,0,0,0.1);}
-.auth-error{
-  background:var(--red-light);border:1px solid #ef9a9a;color:var(--red);
-  border-radius:8px;padding:10px 14px;font-size:13px;margin-top:12px;display:none;
+.auth-heading span { color: var(--accent); }
+ 
+.auth-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+  gap: 0;
 }
-.auth-error.visible{display:block;}
-.auth-divider{display:flex;align-items:center;gap:10px;margin:16px 0 12px;}
-.auth-divider div{flex:1;height:1px;background:var(--border);}
-.auth-divider span{font-size:12px;color:var(--muted);}
-.btn-google{
-  width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--border);
-  background:var(--white);color:var(--text);font-family:'DM Sans',sans-serif;
-  font-size:14px;font-weight:600;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:10px;
-  transition:border-color 0.2s,box-shadow 0.2s;
+.auth-tab {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  background: transparent;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.2s;
+  position: relative;
 }
-.btn-google:hover{border-color:#4285F4;box-shadow:0 2px 8px rgba(66,133,244,0.2);}
-
+.auth-tab::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform 0.2s;
+}
+.auth-tab.active { color: var(--text); }
+.auth-tab.active::after { transform: scaleX(1); }
+ 
+.auth-error {
+  background: var(--red-light);
+  border: 1px solid #d4a0a0;
+  color: var(--red);
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-top: 12px;
+  display: none;
+}
+.auth-error.visible { display: block; }
+ 
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 16px;
+}
+.auth-divider div { flex: 1; height: 1px; background: var(--border); }
+.auth-divider span { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+ 
+.btn-google {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  letter-spacing: 0.04em;
+  transition: border-color 0.2s, background 0.2s;
+}
+.btn-google:hover { border-color: var(--text); background: var(--bg); }
+ 
 /* ══ HEADER ══ */
-.header{
-  background:var(--primary);color:#fff;padding:14px 16px;
-  display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(21,101,192,0.25);
+.header {
+  background: var(--primary);
+  color: #fff;
+  padding: 0 20px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
-.header-title{font-size:17px;font-weight:700;}
-.header-user{font-size:11px;opacity:0.8;max-width:140px;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap;}
-.btn-logout{
-  background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);
-  color:#fff;padding:5px 10px;border-radius:7px;font-size:12px;
-  cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.2s;
+.header-brand {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.9;
 }
-.btn-logout:hover{background:rgba(255,255,255,0.25);}
-
-/* ══ COMPARADORES DE USUARIO ══ */
-.user-comparators{
-  background:var(--white);border-bottom:1px solid var(--border);
-  padding:8px 16px;display:flex;gap:10px;flex-wrap:wrap;
-  align-items:center;
+.header-user {
+  font-size: 11px;
+  opacity: 0.5;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'DM Mono', monospace;
 }
-.comparator-tag{
-  display:inline-flex;align-items:center;gap:5px;
-  background:var(--primary-light);border:1px solid #90caf9;
-  border-radius:20px;padding:4px 10px;font-size:11px;
-  font-weight:600;color:var(--primary);
+.btn-logout {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.7);
+  padding: 5px 12px;
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
 }
-.comparator-tag .label{color:var(--muted);font-weight:500;margin-right:2px;}
-.comparator-uid{font-family:'DM Mono',monospace;font-size:10px;
-  max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-
+.btn-logout:hover { border-color: rgba(255,255,255,0.6); color: #fff; }
+ 
+/* ══ USER COMPARATORS ══ */
+.user-comparators {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 20px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.comparator-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.comparator-tag .label {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-size: 10px;
+}
+.comparator-uid {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+ 
 /* ══ BOTTOM TABS ══ */
-.bottom-tabs{position:fixed;bottom:0;left:0;right:0;background:var(--white);
-  border-top:1px solid var(--border);display:flex;z-index:100;
-  box-shadow:0 -2px 12px rgba(0,0,0,0.07);}
-.tab-btn{flex:1;padding:10px 0 12px;border:none;background:transparent;cursor:pointer;
-  display:flex;flex-direction:column;align-items:center;gap:3px;}
-.tab-btn .tab-icon{font-size:22px;}
-.tab-btn .tab-label{font-size:11px;font-weight:600;color:#9ca3af;letter-spacing:0.4px;
-  text-transform:uppercase;transition:color 0.2s;}
-.tab-btn.active .tab-label{color:var(--primary);}
-.tab-btn .tab-bar{width:0;height:3px;background:var(--primary);border-radius:99px;
-  transition:width 0.25s;margin-top:2px;}
-.tab-btn.active .tab-bar{width:32px;}
-.tab-badge{position:relative;display:inline-block;}
-.tab-badge .count{position:absolute;top:-6px;right:-10px;background:#e53935;color:#fff;
-  border-radius:99px;font-size:10px;font-weight:700;padding:1px 5px;
-  display:none;line-height:1.4;}
-.tab-badge .count.visible{display:block;}
-
+.bottom-tabs {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--white);
+  border-top: 1px solid var(--border);
+  display: flex;
+  z-index: 100;
+}
+.tab-btn {
+  flex: 1;
+  padding: 14px 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+.tab-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 20%; right: 20%;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform 0.2s;
+}
+.tab-btn.active::before { transform: scaleX(1); }
+.tab-icon-svg {
+  width: 18px; height: 18px;
+  stroke: var(--muted);
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.2s;
+}
+.tab-btn.active .tab-icon-svg { stroke: var(--accent); }
+.tab-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+.tab-btn.active .tab-label { color: var(--accent); }
+.tab-badge { position: relative; display: inline-block; }
+.tab-badge .count {
+  position: absolute;
+  top: -5px; right: -10px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 99px;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  display: none;
+  line-height: 1.4;
+  font-family: 'DM Mono', monospace;
+}
+.tab-badge .count.visible { display: block; }
+ 
 /* ══ PAGES ══ */
-.page{display:none;padding:16px;}
-.page.active{display:block;}
-
+.page { display: none; padding: 20px; }
+.page.active { display: block; }
+ 
 /* ══ NOTIF BANNER ══ */
-.notif-banner{
-  background:var(--blue-info-light);border:1px solid #90caf9;border-radius:10px;
-  padding:12px 14px;font-size:13px;color:var(--blue-info);margin-bottom:14px;
-  display:none;align-items:center;gap:10px;max-width:440px;margin-left:auto;margin-right:auto;
+.notif-banner {
+  background: var(--blue-info-light);
+  border: 1px solid #b0c4d8;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--blue-info);
+  margin-bottom: 16px;
+  display: none;
+  align-items: center;
+  gap: 12px;
+  max-width: 440px;
+  margin-left: auto;
+  margin-right: auto;
 }
-.notif-banner.visible{display:flex;}
-.notif-banner button{
-  margin-left:auto;background:var(--primary);border:none;border-radius:6px;
-  padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;color:#fff;
-  white-space:nowrap;
+.notif-banner.visible { display: flex; }
+.notif-banner button {
+  margin-left: auto;
+  background: var(--blue-info);
+  border: none;
+  padding: 6px 14px;
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: #fff;
+  white-space: nowrap;
 }
-
+ 
 /* ══ SCANNER ══ */
-#scanner-container{width:100%;max-width:440px;margin:0 auto 14px;border-radius:var(--radius);
-  overflow:hidden;background:#000;position:relative;height:220px;box-shadow:var(--shadow);}
-#scanner-container video,#scanner-container canvas{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;}
-.scan-overlay{position:absolute;inset:0;z-index:9;display:none;align-items:center;justify-content:center;}
-.scan-overlay.active{display:flex;}
-.scan-frame{width:200px;height:100px;border:2px solid rgba(255,255,255,0.4);border-radius:8px;position:relative;}
-.scan-frame::before,.scan-frame::after{content:'';position:absolute;width:20px;height:20px;border-color:#00e676;border-style:solid;}
-.scan-frame::before{top:-2px;left:-2px;border-width:3px 0 0 3px;border-radius:4px 0 0 0;}
-.scan-frame::after{bottom:-2px;right:-2px;border-width:0 3px 3px 0;border-radius:0 0 4px 0;}
-.linea-scan{position:absolute;left:10%;right:10%;height:2px;background:#00e676;
-  box-shadow:0 0 10px #00e676;z-index:10;animation:scan 2s ease-in-out infinite;display:none;}
-.linea-scan.active{display:block;}
-.scan-idle{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  flex-direction:column;gap:8px;color:#aaa;font-size:13px;}
-.scan-idle-icon{font-size:40px;}
-
-.btn-row{max-width:440px;margin:0 auto 14px;display:flex;gap:10px;}
-.btn{flex:1;padding:13px 10px;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;
-  font-size:15px;font-weight:700;cursor:pointer;transition:transform 0.1s,opacity 0.15s;
-  display:flex;align-items:center;justify-content:center;gap:6px;}
-.btn:active{transform:scale(0.97);opacity:0.85;}
-.btn-escanear{background:var(--primary);color:#fff;}
-.btn-detener{background:var(--red);color:#fff;display:none;}
-.btn-guardar{background:var(--green);color:#fff;width:100%;}
-.btn-auth-main{background:var(--primary);color:#fff;width:100%;margin-top:4px;
-  border:none;border-radius:10px;padding:13px;font-family:'DM Sans',sans-serif;
-  font-size:15px;font-weight:700;cursor:pointer;}
-
-.card{background:var(--white);border-radius:var(--radius);padding:18px;
-  max-width:440px;margin:0 auto 14px;box-shadow:var(--shadow);}
-.card-title{font-size:14px;font-weight:700;color:var(--primary);margin-bottom:14px;
-  display:flex;align-items:center;gap:6px;}
-.campo{margin-bottom:14px;}
-label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;
-  text-transform:uppercase;letter-spacing:0.6px;font-weight:600;}
-input,select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;
-  font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);background:#fafbfc;
-  transition:border-color 0.2s;}
-input:focus,select:focus{outline:none;border-color:var(--primary);background:#fff;}
-#codigoDetectado{background:var(--green-light);border-color:#a5d6a7;color:var(--green);
-  font-family:'DM Mono',monospace;font-weight:500;}
-#estado{text-align:center;font-size:14px;font-weight:500;padding:11px 14px;
-  border-radius:9px;margin-top:10px;display:none;}
-.exito{background:var(--green-light);color:var(--green);display:block!important;}
-.error{background:var(--red-light);color:var(--red);display:block!important;}
-.cargando{background:var(--blue-info-light);color:var(--blue-info);display:block!important;}
-
+#scanner-container {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto 16px;
+  background: var(--primary);
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+}
+#scanner-container video,
+#scanner-container canvas {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  position: absolute; top: 0; left: 0;
+}
+.scan-overlay {
+  position: absolute; inset: 0;
+  z-index: 9;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.scan-overlay.active { display: flex; }
+.scan-frame {
+  width: 200px; height: 100px;
+  border: 1px solid rgba(255,255,255,0.3);
+  position: relative;
+}
+.scan-frame::before, .scan-frame::after {
+  content: '';
+  position: absolute;
+  width: 20px; height: 20px;
+  border-color: #fff;
+  border-style: solid;
+}
+.scan-frame::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+.scan-frame::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+.linea-scan {
+  position: absolute;
+  left: 10%; right: 10%;
+  height: 1px;
+  background: var(--accent);
+  z-index: 10;
+  animation: scan 2s ease-in-out infinite;
+  display: none;
+}
+.linea-scan.active { display: block; }
+@keyframes scan {
+  0%   { top: 20%; }
+  50%  { top: 80%; }
+  100% { top: 20%; }
+}
+.scan-idle {
+  position: absolute; inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  color: rgba(255,255,255,0.3);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.scan-idle-icon {
+  width: 36px; height: 36px;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+}
+.scan-idle-icon svg {
+  width: 18px; height: 18px;
+  stroke: rgba(255,255,255,0.3);
+  fill: none;
+  stroke-width: 1.5;
+}
+ 
+.btn-row {
+  max-width: 440px;
+  margin: 0 auto 16px;
+  display: flex;
+  gap: 8px;
+}
+.btn {
+  flex: 1;
+  padding: 13px 10px;
+  border: none;
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn:active { transform: scale(0.98); opacity: 0.85; }
+.btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; }
+ 
+.btn-escanear { background: var(--primary); color: #fff; }
+.btn-detener  { background: var(--red); color: #fff; display: none; }
+.btn-guardar  { background: var(--accent); color: #fff; width: 100%; }
+ 
+.btn-auth-main {
+  background: var(--primary);
+  color: #fff;
+  width: 100%;
+  margin-top: 4px;
+  border: none;
+  padding: 14px;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-auth-main:hover { background: #2a2a2a; }
+ 
+/* ══ CARD ══ */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  padding: 20px;
+  max-width: 440px;
+  margin: 0 auto 16px;
+}
+.card-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.campo { margin-bottom: 16px; }
+ 
+label {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+input, select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  transition: border-color 0.2s, background 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--white);
+}
+#codigoDetectado {
+  background: var(--green-light);
+  border-color: #9fc4b0;
+  color: var(--green);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+}
+ 
+#estado {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 11px 14px;
+  margin-top: 12px;
+  display: none;
+}
+.exito   { background: var(--green-light); color: var(--green);     display: block !important; }
+.error   { background: var(--red-light);   color: var(--red);       display: block !important; }
+.cargando{ background: var(--blue-info-light); color: var(--blue-info); display: block !important; }
+ 
 /* ══ INVENTARIO ══ */
-.inv-header{max-width:440px;margin:0 auto 14px;display:flex;align-items:center;justify-content:space-between;}
-.inv-title{font-size:18px;font-weight:700;color:var(--text);}
-.inv-sub{font-size:13px;color:var(--muted);font-weight:500;margin-top:2px;}
-
-.filter-bar{max-width:440px;margin:0 auto 14px;display:flex;gap:8px;overflow-x:auto;
-  padding-bottom:4px;scrollbar-width:none;}
-.filter-bar::-webkit-scrollbar{display:none;}
-.filter-chip{white-space:nowrap;padding:6px 14px;border-radius:99px;
-  border:1.5px solid var(--border);background:var(--white);
-  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;
-  color:var(--muted);cursor:pointer;transition:all 0.15s;}
-.filter-chip.active{background:var(--primary);border-color:var(--primary);color:#fff;}
-.chip-urgente.active{background:var(--red);border-color:var(--red);}
-.chip-aviso.active{background:var(--warn);border-color:var(--warn);}
-
-.inv-list{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:10px;}
-.inv-item{background:var(--white);border-radius:var(--radius);padding:14px 16px;
-  box-shadow:var(--shadow);display:flex;align-items:flex-start;gap:12px;
-  animation:slideIn 0.3s ease both;border-left:4px solid var(--primary);}
-.inv-item.urgente{border-left-color:var(--red);}
-.inv-item.aviso{border-left-color:var(--warn);}
-.inv-item.ok{border-left-color:var(--green);}
-@keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.inv-item-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;
-  justify-content:center;font-size:22px;flex-shrink:0;}
-.inv-item-body{flex:1;min-width:0;}
-.inv-item-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.inv-item-code{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:7px;}
-.inv-item-meta{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:5px;}
-.inv-item-user{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:4px;}
-.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;
-  border-radius:99px;font-size:11px;font-weight:600;}
-.badge-tipo{background:#ede9fe;color:#5b21b6;}
-.badge-vence-ok{background:var(--green-light);color:var(--green);}
-.badge-vence-warn{background:#fff3e0;color:var(--warn);}
-.badge-vence-bad{background:var(--red-light);color:var(--red);}
-.badge-uid{background:#e3f0ff;color:var(--primary);font-family:'DM Mono',monospace;font-size:10px;}
-.badge-email{background:#f3e5f5;color:#7b1fa2;font-size:10px;}
-.inv-item-time{font-size:11px;color:#aaa;align-self:flex-start;white-space:nowrap;padding-top:2px;}
-
-.loading-msg{text-align:center;color:var(--muted);padding:40px 20px;font-size:14px;}
-.empty-state{text-align:center;padding:60px 20px;color:var(--muted);max-width:440px;margin:0 auto;}
-.empty-state .empty-icon{font-size:52px;margin-bottom:14px;}
-.empty-state p{font-size:15px;font-weight:500;line-height:1.5;}
-.empty-state small{font-size:13px;opacity:0.7;}
-
-.inv-reload-btn{
-  display:block;margin:0 auto 14px;max-width:440px;width:100%;
-  background:var(--primary-light);border:1.5px solid var(--primary);
-  color:var(--primary);border-radius:10px;padding:10px;font-family:'DM Sans',sans-serif;
-  font-size:14px;font-weight:700;cursor:pointer;
+.inv-header {
+  max-width: 440px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+}
+.inv-title { font-size: 22px; font-weight: 800; color: var(--text); }
+.inv-sub   { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 2px; font-family: 'DM Mono', monospace; }
+ 
+.filter-bar {
+  max-width: 440px;
+  margin: 0 auto 16px;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.filter-bar::-webkit-scrollbar { display: none; }
+ 
+.filter-chip {
+  white-space: nowrap;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  border-radius: 0;
+}
+.filter-chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.chip-urgente.active { background: var(--red);  border-color: var(--red);  }
+.chip-aviso.active   { background: var(--warn); border-color: var(--warn); }
+ 
+/* ══ INV ITEMS ══ */
+.inv-list {
+  max-width: 440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.inv-item {
+  background: var(--white);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  animation: slideIn 0.25s ease both;
+  border-left: 3px solid var(--primary);
+}
+.inv-item.urgente { border-left-color: var(--red);  }
+.inv-item.aviso   { border-left-color: var(--warn); }
+.inv-item.ok      { border-left-color: var(--green);}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+ 
+.inv-item-icon {
+  width: 36px; height: 36px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.inv-item-icon svg {
+  width: 16px; height: 16px;
+  stroke: var(--muted);
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.inv-item-body  { flex: 1; min-width: 0; }
+.inv-item-name  {
+  font-size: 14px; font-weight: 700; color: var(--text);
+  margin-bottom: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.inv-item-code  {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; color: var(--muted); margin-bottom: 8px;
+}
+.inv-item-meta  { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.inv-item-user  { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+ 
+.badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  border: 1px solid transparent;
+}
+.badge-tipo       { background: #f0edfa; color: #4a2d8c; border-color: #d4c8f5; }
+.badge-vence-ok   { background: var(--green-light); color: var(--green); border-color: #9fc4b0; }
+.badge-vence-warn { background: var(--warn-light);  color: var(--warn);  border-color: #d4a86a; }
+.badge-vence-bad  { background: var(--red-light);   color: var(--red);   border-color: #d4a0a0; }
+.badge-uid        { background: var(--bg); color: var(--muted); border-color: var(--border); font-family: 'DM Mono', monospace; font-size: 10px; text-transform: none; letter-spacing: 0; }
+.badge-email      { background: var(--bg); color: var(--muted); border-color: var(--border); font-size: 10px; text-transform: none; letter-spacing: 0; }
+ 
+.inv-item-time {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; color: var(--muted);
+  align-self: flex-start; white-space: nowrap; padding-top: 2px;
+}
+ 
+.loading-msg { text-align: center; color: var(--muted); padding: 40px 20px; font-size: 13px; letter-spacing: 0.04em; }
+ 
+.empty-state {
+  text-align: center; padding: 60px 20px;
+  color: var(--muted); max-width: 440px; margin: 0 auto;
+}
+.empty-state .empty-icon {
+  width: 48px; height: 48px;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.empty-state .empty-icon svg {
+  width: 22px; height: 22px;
+  stroke: var(--muted); fill: none; stroke-width: 1.5;
+}
+.empty-state p     { font-size: 14px; font-weight: 700; line-height: 1.5; margin-bottom: 6px; }
+.empty-state small { font-size: 12px; opacity: 0.6; }
+ 
+.inv-reload-btn {
+  display: block; margin: 0 auto 16px;
+  max-width: 440px; width: 100%;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 10px;
+  font-family: 'Syne', sans-serif;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.inv-reload-btn:hover { border-color: var(--primary); color: var(--primary); }
+ 
+/* Select wrapper */
+.select-wrap { position: relative; }
+.select-wrap::after {
+  content: '';
+  position: absolute;
+  right: 12px; top: 50%; transform: translateY(-50%);
+  width: 0; height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--muted);
+  pointer-events: none;
 }
 </style>
 </head>
 <body>
-
-<!-- ══════════════ AUTH SCREEN ══════════════ -->
+ 
+<!-- AUTH SCREEN -->
 <div id="authScreen" class="visible">
   <div class="auth-box">
-    <div class="auth-logo">📦 Escáner de <span>Inventario</span></div>
-    <div class="auth-subtitle">Controla tus productos y vencimientos</div>
-
+    <div class="auth-logo">Sistema de Control</div>
+    <div class="auth-heading">Inventario<br><span>Scanner</span></div>
+ 
     <div class="auth-tabs">
       <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Ingresar</button>
       <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Registrarse</button>
     </div>
-
+ 
     <div class="campo">
       <label>Correo electrónico</label>
       <input type="email" id="authEmail" placeholder="tucorreo@gmail.com" />
@@ -252,15 +710,15 @@ input:focus,select:focus{outline:none;border-color:var(--primary);background:#ff
       <label>Contraseña</label>
       <input type="password" id="authPass" placeholder="Mínimo 6 caracteres" />
     </div>
-
+ 
     <button class="btn-auth-main" onclick="authAction()" id="btnAuthAction">Ingresar</button>
-
+ 
     <div class="auth-divider">
       <div></div><span>o continúa con</span><div></div>
     </div>
-
+ 
     <button class="btn-google" onclick="loginConGoogle()">
-      <svg width="18" height="18" viewBox="0 0 48 48">
+      <svg width="16" height="16" viewBox="0 0 48 48">
         <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
         <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
         <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
@@ -268,58 +726,65 @@ input:focus,select:focus{outline:none;border-color:var(--primary);background:#ff
       </svg>
       Continuar con Google
     </button>
-
+ 
     <div class="auth-error" id="authError"></div>
   </div>
 </div>
-
-<!-- ══════════════ APP SCREEN ══════════════ -->
+ 
+<!-- APP SCREEN -->
 <div id="appScreen" style="display:none;">
-
+ 
   <!-- Header -->
   <div class="header">
-    <div class="header-title">📦 Escáner de Inventario</div>
+    <div class="header-brand">Inventario Scanner</div>
     <div id="userEmail" class="header-user"></div>
     <button class="btn-logout" onclick="logout()">Salir</button>
   </div>
-
-  <!-- Comparadores de Usuario -->
+ 
+  <!-- User Comparators -->
   <div class="user-comparators" id="userComparators">
     <span class="comparator-tag">
-      <span class="label">UID:</span>
+      <span class="label">UID</span>
       <span class="comparator-uid" id="compUID">—</span>
     </span>
     <span class="comparator-tag">
-      <span class="label">Email:</span>
+      <span class="label">Email</span>
       <span id="compEmail">—</span>
     </span>
   </div>
-
-  <!-- ══ ESCANEAR ══ -->
+ 
+  <!-- ESCANEAR PAGE -->
   <div class="page active" id="page-scan">
-
-    <!-- Banner notificaciones -->
+ 
     <div class="notif-banner" id="notifBanner">
-      <span>🔔 Activa notificaciones para alertas de vencimiento</span>
+      <span>Activa notificaciones para alertas de vencimiento</span>
       <button onclick="pedirNotificaciones()">Activar</button>
     </div>
-
+ 
     <div id="scanner-container">
       <div id="scanIdle" class="scan-idle">
-        <div class="scan-idle-icon">📷</div>
-        <div>Presiona "Activar cámara"</div>
+        <div class="scan-idle-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="0"/><path d="M7 7h2v2H7zM15 7h2v2h-2zM7 15h2v2H7zM11 11h2v2h-2z"/></svg>
+        </div>
+        <div>Activar cámara</div>
       </div>
       <div class="scan-overlay" id="scanOverlay"></div>
       <div class="linea-scan" id="lineaScan"></div>
     </div>
-
+ 
     <div class="btn-row">
-      <button class="btn btn-escanear" id="btnEscanear" onclick="iniciarEscaner()">📷 Activar cámara</button>
-      <button class="btn btn-detener"  id="btnDetener"  onclick="detenerEscaner()">⏹ Detener</button>
+      <button class="btn btn-escanear" id="btnEscanear" onclick="iniciarEscaner()">
+        <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Activar cámara
+      </button>
+      <button class="btn btn-detener" id="btnDetener" onclick="detenerEscaner()">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"/></svg>
+        Detener
+      </button>
     </div>
-
+ 
     <div class="card">
-      <div class="card-title">📋 Datos del producto</div>
+      <div class="card-title">Datos del producto</div>
       <div class="campo">
         <label>Código escaneado</label>
         <input type="text" id="codigoDetectado" placeholder="Escanea un código..." readonly />
@@ -330,16 +795,18 @@ input:focus,select:focus{outline:none;border-color:var(--primary);background:#ff
       </div>
       <div class="campo">
         <label>Tipo</label>
-        <select id="tipo">
-          <option value="Alimento">Alimento</option>
-          <option value="Bebida">Bebida</option>
-          <option value="Lacteos">Lácteos</option>
-          <option value="Condimentos">Condimentos</option>
-          <option value="Snacks">Snacks</option>
-          <option value="Enlatados">Enlatados</option>
-          <option value="Granos">Granos</option>
-          <option value="Panaderia">Panadería</option>
-        </select>
+        <div class="select-wrap">
+          <select id="tipo">
+            <option value="Alimento">Alimento</option>
+            <option value="Bebida">Bebida</option>
+            <option value="Lacteos">Lácteos</option>
+            <option value="Condimentos">Condimentos</option>
+            <option value="Snacks">Snacks</option>
+            <option value="Enlatados">Enlatados</option>
+            <option value="Granos">Granos</option>
+            <option value="Panaderia">Panadería</option>
+          </select>
+        </div>
       </div>
       <div style="display:flex;gap:10px;">
         <div class="campo" style="flex:1;">
@@ -351,58 +818,63 @@ input:focus,select:focus{outline:none;border-color:var(--primary);background:#ff
           <input type="date" id="fechaAviso" />
         </div>
       </div>
-      <button class="btn btn-guardar" onclick="guardarEnAirtable()">💾 Guardar en Airtable</button>
+      <button class="btn btn-guardar" onclick="guardarEnAirtable()">
+        <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Guardar en Airtable
+      </button>
       <div id="estado"></div>
     </div>
   </div>
-
-  <!-- ══ INVENTARIO ══ -->
+ 
+  <!-- INVENTARIO PAGE -->
   <div class="page" id="page-inv">
-
+ 
     <div class="inv-header">
       <div>
-        <div class="inv-title">Mi inventario</div>
+        <div class="inv-title">Inventario</div>
         <div class="inv-sub" id="inv-count">Cargando...</div>
       </div>
     </div>
-
-    <button class="inv-reload-btn" onclick="cargarInventario()">🔄 Recargar inventario</button>
-
+ 
+    <button class="inv-reload-btn" onclick="cargarInventario()">Recargar inventario</button>
+ 
     <div class="filter-bar">
       <button class="filter-chip active" data-filtro="todos"    onclick="filtrar(this)">Todos</button>
-      <button class="filter-chip chip-urgente" data-filtro="urgente" onclick="filtrar(this)">🚨 Urgente</button>
-      <button class="filter-chip chip-aviso"   data-filtro="aviso"   onclick="filtrar(this)">⚠️ Por vencer</button>
-      <button class="filter-chip"              data-filtro="ok"      onclick="filtrar(this)">✅ OK</button>
+      <button class="filter-chip chip-urgente" data-filtro="urgente" onclick="filtrar(this)">Urgente</button>
+      <button class="filter-chip chip-aviso"   data-filtro="aviso"   onclick="filtrar(this)">Por vencer</button>
+      <button class="filter-chip"              data-filtro="ok"      onclick="filtrar(this)">OK</button>
     </div>
-
+ 
     <div id="inv-content">
       <div class="loading-msg">Carga tu inventario en la pestaña Escanear</div>
     </div>
   </div>
-
+ 
   <!-- Bottom Tabs -->
   <div class="bottom-tabs">
     <button class="tab-btn active" id="tabScan" onclick="switchTab('scan')">
-      <span class="tab-icon">📷</span>
+      <span class="tab-badge">
+        <svg class="tab-icon-svg" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </span>
       <span class="tab-label">Escanear</span>
       <div class="tab-bar"></div>
     </button>
     <button class="tab-btn" id="tabInv" onclick="switchTab('inv')">
       <span class="tab-badge">
-        <span class="tab-icon">📦</span>
+        <svg class="tab-icon-svg" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
         <span class="count" id="tab-count"></span>
       </span>
       <span class="tab-label">Inventario</span>
       <div class="tab-bar"></div>
     </button>
   </div>
-
+ 
 </div><!-- /appScreen -->
-
+ 
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-
+ 
 <script>
 // ══════════════════════════════════════════
 //  CONFIGURACIÓN
@@ -416,18 +888,17 @@ const firebaseConfig = {
   appId: "1:925479664370:web:dffbd0dec95aa32bbfae6b",
   measurementId: "G-LGJ125S708"
 };
-
-
+ 
 const AIRTABLE_TOKEN = "patH2lLXW4YJYez4a.cd0772ea1837b4cdbd8579e6840f7e36bcb17e0214ab2fafa10252d6d2fd2cea";
 const BASE_ID        = "appNGlPOc4Q3DKGNC";
 const TABLA          = "Table 1";
-
+ 
 // ══════════════════════════════════════════
 //  FIREBASE INIT
 // ══════════════════════════════════════════
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-
+ 
 // ══════════════════════════════════════════
 //  ESTADO GLOBAL
 // ══════════════════════════════════════════
@@ -436,32 +907,35 @@ let escaneando        = false;
 let ultimoCodigo      = "";
 let todosLosProductos = [];
 let filtroActual      = "todos";
-
+ 
 // ══════════════════════════════════════════
-//  ICONOS / COLORES POR TIPO
+//  ICONOS SVG POR TIPO (inline SVG paths)
 // ══════════════════════════════════════════
-const tipoIcono  = { Alimento:"🥗", Bebida:"🥤", Lacteos:"🥛", Condimentos:"🧂", Snacks:"🍿", Enlatados:"🥫", Granos:"🌾", Panaderia:"🍞", default:"📦" };
-const tipoColor  = { Alimento:"#e8f5e9", Bebida:"#e3f2fd", Lacteos:"#fce4ec", Condimentos:"#fff3e0", Snacks:"#fbe9e7", Enlatados:"#f3e5f5", Granos:"#fffde7", Panaderia:"#efebe9", default:"#f5f5f5" };
-
+const tipoIconSVG = {
+  Alimento:    `<svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z"/><path d="M8 12h8M12 8v8"/></svg>`,
+  Bebida:      `<svg viewBox="0 0 24 24"><path d="M17 2H7l-2 6h14l-2-6zM5 8v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8H5z"/></svg>`,
+  Lacteos:     `<svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M6 8h12"/></svg>`,
+  Condimentos: `<svg viewBox="0 0 24 24"><path d="M9 2h6l2 4H7L9 2zM7 6v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6H7z"/></svg>`,
+  Snacks:      `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>`,
+  Enlatados:   `<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M5 8h14M5 16h14"/></svg>`,
+  Granos:      `<svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="6" ry="10"/><path d="M12 2v20M6.5 5.5l11 3M6.5 18.5l11-3"/></svg>`,
+  Panaderia:   `<svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 16 0v6H4v-6z"/><path d="M4 18h16"/></svg>`,
+  default:     `<svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`
+};
+ 
 // ══════════════════════════════════════════
 //  AUTH STATE
 // ══════════════════════════════════════════
 auth.onAuthStateChanged(user => {
   currentUser = user;
   if (user) {
-    // Ocultar auth, mostrar app
     document.getElementById("authScreen").classList.remove("visible");
     document.getElementById("authScreen").style.display = "none";
     document.getElementById("appScreen").style.display  = "block";
-
-    // Mostrar email en header
     document.getElementById("userEmail").textContent = user.email;
-
-    // ── COMPARADORES DE USUARIO ──
     document.getElementById("compUID").textContent   = user.uid;
     document.getElementById("compUID").title         = user.uid;
     document.getElementById("compEmail").textContent = user.email;
-
     cargarInventario();
     verificarPermisoNotificaciones();
   } else {
@@ -470,12 +944,12 @@ auth.onAuthStateChanged(user => {
     document.getElementById("appScreen").style.display  = "none";
   }
 });
-
+ 
 // ══════════════════════════════════════════
 //  AUTH HELPERS
 // ══════════════════════════════════════════
 let authMode = "login";
-
+ 
 function switchAuthTab(mode) {
   authMode = mode;
   document.getElementById("tabLogin").classList.toggle("active",    mode === "login");
@@ -483,7 +957,7 @@ function switchAuthTab(mode) {
   document.getElementById("btnAuthAction").textContent = mode === "login" ? "Ingresar" : "Registrarse";
   clearAuthError();
 }
-
+ 
 function authAction() {
   const email = document.getElementById("authEmail").value.trim();
   const pass  = document.getElementById("authPass").value;
@@ -495,18 +969,18 @@ function authAction() {
     auth.createUserWithEmailAndPassword(email, pass).catch(e => showAuthError(tradError(e.code)));
   }
 }
-
+ 
 function loginConGoogle() {
   clearAuthError();
   const provider = new firebase.auth.GoogleAuthProvider();
   auth.signInWithPopup(provider).catch(e => showAuthError(tradError(e.code)));
 }
-
+ 
 function logout() {
   detenerEscaner();
   auth.signOut();
 }
-
+ 
 function showAuthError(msg) {
   const el = document.getElementById("authError");
   el.textContent = msg; el.classList.add("visible");
@@ -527,14 +1001,13 @@ function tradError(code) {
   };
   return m[code] || ("Error: " + code);
 }
-
-// Enter en pass
+ 
 document.addEventListener("DOMContentLoaded", function() {
   document.getElementById("authPass").addEventListener("keydown", e => {
     if (e.key === "Enter") authAction();
   });
 });
-
+ 
 // ══════════════════════════════════════════
 //  TABS DE NAVEGACIÓN
 // ══════════════════════════════════════════
@@ -545,7 +1018,7 @@ function switchTab(tab) {
   document.getElementById("page-inv").classList.toggle("active",  tab === "inv");
   if (tab === "inv") cargarInventario();
 }
-
+ 
 // ══════════════════════════════════════════
 //  NOTIFICACIONES
 // ══════════════════════════════════════════
@@ -555,65 +1028,60 @@ function verificarPermisoNotificaciones() {
     document.getElementById("notifBanner").classList.add("visible");
   }
 }
-
+ 
 function pedirNotificaciones() {
   if (!("Notification" in window)) { alert("Tu navegador no soporta notificaciones"); return; }
   Notification.requestPermission().then(perm => {
     document.getElementById("notifBanner").classList.remove("visible");
     if (perm === "granted") {
-      enviarNotificacion("📦 Escáner de Inventario activado", "Recibirás alertas cuando tus productos estén por vencer.");
+      enviarNotificacion("Inventario Scanner activado", "Recibirás alertas cuando tus productos estén por vencer.");
       verificarAvisos();
     }
   });
 }
-
+ 
 function verificarAvisos() {
   if (!("Notification" in window) || Notification.permission !== "granted") return;
   if (!todosLosProductos.length) return;
-
-  const hoy     = new Date(); hoy.setHours(0,0,0,0);
+ 
+  const hoy      = new Date(); hoy.setHours(0,0,0,0);
   const avisados = JSON.parse(localStorage.getItem("inv_avisados") || "{}");
-  const hoyStr  = hoy.toISOString().split("T")[0];
-
+  const hoyStr   = hoy.toISOString().split("T")[0];
+ 
   todosLosProductos.forEach(r => {
     const f         = r.fields;
     const nombre    = f["Nombre"] || "Un producto";
     const key       = r.id + "_" + hoyStr;
     if (avisados[key]) return;
-
+ 
     const venceDate = f["Fecha vencimiento"] ? parseFecha(f["Fecha vencimiento"]) : null;
     const avisoDate = f["Fecha Aviso"]       ? parseFecha(f["Fecha Aviso"])       : null;
     const diasVence = venceDate ? Math.floor((venceDate - hoy) / 86400000) : null;
     const diasAviso = avisoDate ? Math.floor((avisoDate - hoy) / 86400000) : null;
-
+ 
     if (diasAviso !== null && diasAviso <= 0 && diasVence !== null && diasVence > 0) {
-      enviarNotificacion("⚠️ Por vencer: " + nombre, "Vence el " + formatFecha(f["Fecha vencimiento"]) + ". ¡Úsalo pronto!");
+      enviarNotificacion("Por vencer: " + nombre, "Vence el " + formatFecha(f["Fecha vencimiento"]) + ". Úsalo pronto.");
       avisados[key] = true;
     }
     if (diasVence !== null && diasVence === 0) {
-      enviarNotificacion("🚨 Vence HOY: " + nombre, "Recuerda revisar este producto.");
+      enviarNotificacion("Vence hoy: " + nombre, "Recuerda revisar este producto.");
       avisados[key] = true;
     }
     if (diasVence !== null && diasVence < 0) {
-      enviarNotificacion("❌ Vencido: " + nombre, "Venció hace " + Math.abs(diasVence) + " día(s).");
+      enviarNotificacion("Vencido: " + nombre, "Venció hace " + Math.abs(diasVence) + " día(s).");
       avisados[key] = true;
     }
   });
-
+ 
   localStorage.setItem("inv_avisados", JSON.stringify(avisados));
 }
-
+ 
 function enviarNotificacion(titulo, cuerpo) {
   if ("Notification" in window && Notification.permission === "granted") {
-    try {
-      new Notification(titulo, {
-        body: cuerpo,
-        icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>"
-      });
-    } catch(e) {}
+    try { new Notification(titulo, { body: cuerpo }); } catch(e) {}
   }
 }
-
+ 
 // ══════════════════════════════════════════
 //  ESCÁNER
 // ══════════════════════════════════════════
@@ -626,7 +1094,7 @@ function iniciarEscaner() {
     },
     decoder: { readers:["ean_reader","ean_8_reader","code_128_reader","code_39_reader","upc_reader"] }
   }, function(err) {
-    if (err) { mostrarEstado("❌ No se pudo acceder a la cámara: " + err, "error"); return; }
+    if (err) { mostrarEstado("No se pudo acceder a la cámara: " + err, "error"); return; }
     Quagga.start(); escaneando = true;
     document.getElementById("btnEscanear").style.display = "none";
     document.getElementById("btnDetener").style.display  = "flex";
@@ -634,7 +1102,7 @@ function iniciarEscaner() {
     document.getElementById("scanOverlay").classList.add("active");
     document.getElementById("lineaScan").classList.add("active");
   });
-
+ 
   Quagga.onDetected(function(result) {
     const codigo = result.codeResult.code;
     if (codigo !== ultimoCodigo) {
@@ -645,7 +1113,7 @@ function iniciarEscaner() {
     }
   });
 }
-
+ 
 function detenerEscaner() {
   if (escaneando) { try { Quagga.stop(); } catch(e) {} escaneando = false; }
   document.getElementById("btnEscanear").style.display = "flex";
@@ -654,24 +1122,24 @@ function detenerEscaner() {
   document.getElementById("scanOverlay").classList.remove("active");
   document.getElementById("lineaScan").classList.remove("active");
 }
-
+ 
 // ══════════════════════════════════════════
-//  GUARDAR EN AIRTABLE (con UID y Email)
+//  GUARDAR EN AIRTABLE
 // ══════════════════════════════════════════
 async function guardarEnAirtable() {
-  if (!currentUser) { mostrarEstado("⚠️ Inicia sesión primero", "error"); return; }
+  if (!currentUser) { mostrarEstado("Inicia sesión primero", "error"); return; }
   const codigo     = document.getElementById("codigoDetectado").value.trim();
   const nombre     = document.getElementById("nombre").value.trim();
   const tipo       = document.getElementById("tipo").value;
   const fechaVence = document.getElementById("fechaVence").value;
   const fechaAviso = document.getElementById("fechaAviso").value;
-
+ 
   if (!codigo)   { mostrarEstado("Primero escanea un código", "error"); return; }
   if (!nombre)   { mostrarEstado("Ingresa el nombre del producto", "error"); return; }
   if (!fechaVence || !fechaAviso) { mostrarEstado("Ingresa ambas fechas", "error"); return; }
-
-  mostrarEstado("⏳ Guardando...", "cargando");
-
+ 
+  mostrarEstado("Guardando...", "cargando");
+ 
   try {
     const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLA)}`, {
       method: "POST",
@@ -682,15 +1150,14 @@ async function guardarEnAirtable() {
         "Tipo":              tipo,
         "Fecha vencimiento": fechaVence,
         "Fecha Aviso":       fechaAviso,
-        "UsuarioUID":        currentUser.uid,   // ← comparador 1
-        "UsuarioEmail":      currentUser.email  // ← comparador 2
+        "UsuarioUID":        currentUser.uid,
+        "UsuarioEmail":      currentUser.email
       }})
     });
-
+ 
     if (res.ok) {
-      mostrarEstado("✅ ¡Guardado! Ya aparece en Inventario", "exito");
+      mostrarEstado("Guardado. Ya aparece en Inventario.", "exito");
       limpiarFormulario();
-      // Actualizar badge
       const cnt = document.getElementById("tab-count");
       const n   = parseInt(cnt.textContent || "0") + 1;
       cnt.textContent = n;
@@ -700,50 +1167,48 @@ async function guardarEnAirtable() {
       mostrarEstado("Error: " + (err.error?.message || res.status), "error");
     }
   } catch(e) {
-    mostrarEstado("❌ Error de conexión: " + e.message, "error");
+    mostrarEstado("Error de conexión: " + e.message, "error");
   }
 }
-
+ 
 function limpiarFormulario() {
   ["codigoDetectado","nombre","fechaVence","fechaAviso"].forEach(id => document.getElementById(id).value = "");
   document.getElementById("tipo").value = "Alimento";
   ultimoCodigo = "";
 }
-
+ 
 function mostrarEstado(msg, tipo) {
   const el = document.getElementById("estado");
   el.textContent = msg; el.className = tipo; el.style.display = "block";
   if (tipo === "exito") setTimeout(() => { el.style.display = "none"; }, 3000);
 }
-
+ 
 // ══════════════════════════════════════════
-//  INVENTARIO — carga desde Airtable
-//  Filtra por UsuarioUID del usuario actual
+//  INVENTARIO
 // ══════════════════════════════════════════
 async function cargarInventario() {
   if (!currentUser) return;
   const lista = document.getElementById("inv-content");
-  lista.innerHTML = '<div class="loading-msg">⏳ Cargando tu inventario…</div>';
-
+  lista.innerHTML = '<div class="loading-msg">Cargando inventario...</div>';
+ 
   try {
-    // ── COMPARADOR 1: filtra por UsuarioUID ──
     const formula = encodeURIComponent(`AND({UsuarioUID}="${currentUser.uid}")`);
     const url     = `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLA)}`
                   + `?filterByFormula=${formula}`
                   + `&sort[0][field]=Fecha%20vencimiento&sort[0][direction]=asc`;
-
+ 
     const res  = await fetch(url, { headers:{ "Authorization":"Bearer "+AIRTABLE_TOKEN } });
     const data = await res.json();
     todosLosProductos = data.records || [];
-
+ 
     actualizarBadge();
     renderInventario();
     verificarAvisos();
   } catch(e) {
-    lista.innerHTML = `<div class="loading-msg" style="color:#c62828">❌ Error al cargar: ${e.message}</div>`;
+    lista.innerHTML = `<div class="loading-msg" style="color:var(--red)">Error al cargar: ${e.message}</div>`;
   }
 }
-
+ 
 function parseFecha(str) {
   const p = str.split("-");
   return new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
@@ -753,18 +1218,17 @@ function formatFecha(str) {
   const p = str.split("-");
   return p[2]+"/"+p[1]+"/"+p[0];
 }
-
+ 
 function filtrar(chip) {
   document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
   chip.classList.add('active');
   filtroActual = chip.dataset.filtro;
   renderInventario();
 }
-
+ 
 function renderInventario() {
   const hoy = new Date(); hoy.setHours(0,0,0,0);
-
-  // Calcular estado de cada producto
+ 
   const productos = todosLosProductos.map(r => {
     const f         = r.fields;
     const venceDate = f["Fecha vencimiento"] ? parseFecha(f["Fecha vencimiento"]) : null;
@@ -772,41 +1236,39 @@ function renderInventario() {
     const diasVence = venceDate ? Math.floor((venceDate - hoy) / 86400000) : null;
     const diasAviso = avisoDate ? Math.floor((avisoDate - hoy) / 86400000) : null;
     let estado;
-    if (diasVence !== null && diasVence <= 0)          estado = "urgente";
-    else if (diasAviso !== null && diasAviso <= 0)     estado = "aviso";
-    else                                               estado = "ok";
+    if      (diasVence !== null && diasVence <= 0)      estado = "urgente";
+    else if (diasAviso !== null && diasAviso <= 0)      estado = "aviso";
+    else                                                estado = "ok";
     return { r, f, diasVence, diasAviso, estado };
   });
-
-  // Filtrar
+ 
   const filtrados = filtroActual === "todos"
     ? productos
     : productos.filter(p => p.estado === filtroActual);
-
+ 
   const total = todosLosProductos.length;
   document.getElementById("inv-count").textContent =
-    `${filtrados.length} de ${total} producto${total !== 1 ? "s" : ""}`;
-
+    `${filtrados.length} / ${total} producto${total !== 1 ? "s" : ""}`;
+ 
   if (!filtrados.length) {
+    const iconSVG = `<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" fill="none" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`;
     document.getElementById("inv-content").innerHTML = total === 0
       ? `<div class="empty-state">
-           <div class="empty-icon">📦</div>
-           <p>Aún no tienes productos<br>en tu inventario</p>
-           <small>Escanea y guarda en la pestaña Escanear</small>
+           <div class="empty-icon">${iconSVG}</div>
+           <p>Sin productos en inventario</p>
+           <small>Escanea y guarda desde la pestaña Escanear</small>
          </div>`
       : `<div class="empty-state">
-           <div class="empty-icon">🔍</div>
-           <p>No hay productos en<br>esta categoría</p>
+           <div class="empty-icon">${iconSVG}</div>
+           <p>Sin productos en esta categoría</p>
          </div>`;
     return;
   }
-
+ 
   const html = filtrados.map((p, i) => {
-    const f     = p.f;
-    const icon  = tipoIcono[f["Tipo"]] || tipoIcono["default"];
-    const color = tipoColor[f["Tipo"]] || tipoColor["default"];
-
-    // Badge de vencimiento
+    const f    = p.f;
+    const icon = tipoIconSVG[f["Tipo"]] || tipoIconSVG["default"];
+ 
     let venceBadge = "";
     if (p.diasVence !== null) {
       const d   = p.diasVence;
@@ -816,15 +1278,14 @@ function renderInventario() {
       const cls = d < 0 ? "badge-vence-bad" : d <= 7 ? "badge-vence-warn" : "badge-vence-ok";
       venceBadge = `<span class="badge ${cls}">${lbl}</span>`;
     }
-
-    // ── COMPARADORES: UsuarioUID y UsuarioEmail en la tarjeta ──
-    const uid   = f["UsuarioUID"]   || "—";
-    const email = f["UsuarioEmail"] || "—";
+ 
+    const uid      = f["UsuarioUID"]   || "—";
+    const email    = f["UsuarioEmail"] || "—";
     const uidShort = uid.length > 12 ? uid.substring(0,12)+"…" : uid;
-
+ 
     return `
-      <div class="inv-item ${p.estado}" style="animation-delay:${i*0.04}s">
-        <div class="inv-item-icon" style="background:${color}">${icon}</div>
+      <div class="inv-item ${p.estado}" style="animation-delay:${i*0.03}s">
+        <div class="inv-item-icon">${icon}</div>
         <div class="inv-item-body">
           <div class="inv-item-name">${f["Nombre"] || "Sin nombre"}</div>
           <div class="inv-item-code">${f["CODIGO"] || "—"}</div>
@@ -833,17 +1294,17 @@ function renderInventario() {
             ${venceBadge}
           </div>
           <div class="inv-item-user">
-            <span class="badge badge-uid" title="${uid}">UID: ${uidShort}</span>
-            <span class="badge badge-email">✉️ ${email}</span>
+            <span class="badge badge-uid" title="${uid}">${uidShort}</span>
+            <span class="badge badge-email">${email}</span>
           </div>
         </div>
         <div class="inv-item-time">${formatFecha(f["Fecha vencimiento"])}</div>
       </div>`;
   }).join("");
-
+ 
   document.getElementById("inv-content").innerHTML = `<div class="inv-list">${html}</div>`;
 }
-
+ 
 function actualizarBadge() {
   const cnt = document.getElementById("tab-count");
   if (todosLosProductos.length > 0) {
@@ -856,3 +1317,4 @@ function actualizarBadge() {
 </script>
 </body>
 </html>
+ 
