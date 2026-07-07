@@ -687,92 +687,6 @@ input:focus, select:focus {
   border-top: 5px solid var(--muted);
   pointer-events: none;
 }
-
-/* ══ BOTÓN ELIMINAR ══ */
-.btn-eliminar {
-  flex-shrink: 0;
-  align-self: center;
-  background: transparent;
-  border: 1px solid #d4a0a0;
-  color: var(--red);
-  width: 32px; height: 32px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-  padding: 0;
-}
-.btn-eliminar:hover { background: var(--red-light); border-color: var(--red); }
-.btn-eliminar svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-
-/* ══ MODAL CONFIRMACIÓN ══ */
-.modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.45);
-  z-index: 500;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-.modal-overlay.visible { display: flex; }
-.modal-box {
-  background: var(--white);
-  border: 1px solid var(--border);
-  padding: 28px 24px;
-  width: 100%; max-width: 340px;
-}
-.modal-title {
-  font-size: 15px; font-weight: 800;
-  margin-bottom: 8px; color: var(--text);
-}
-.modal-body {
-  font-size: 13px; color: var(--muted);
-  margin-bottom: 20px; line-height: 1.5;
-}
-.modal-product-name {
-  font-weight: 700; color: var(--text);
-}
-.modal-actions { display: flex; gap: 8px; }
-.modal-btn-cancel {
-  flex: 1; padding: 11px;
-  background: transparent;
-  border: 1px solid var(--border);
-  font-family: 'Syne', sans-serif;
-  font-size: 12px; font-weight: 700;
-  letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--muted); cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
-}
-.modal-btn-cancel:hover { border-color: var(--primary); color: var(--primary); }
-.modal-btn-delete {
-  flex: 1; padding: 11px;
-  background: var(--red);
-  border: 1px solid var(--red);
-  font-family: 'Syne', sans-serif;
-  font-size: 12px; font-weight: 700;
-  letter-spacing: 0.08em; text-transform: uppercase;
-  color: #fff; cursor: pointer;
-  transition: opacity 0.15s;
-}
-.modal-btn-delete:hover { opacity: 0.85; }
-
-/* ══ TOAST AUTO-BORRADO ══ */
-.toast-auto {
-  position: fixed;
-  bottom: 80px; left: 50%; transform: translateX(-50%);
-  background: var(--red);
-  color: #fff;
-  padding: 10px 18px;
-  font-family: 'Syne', sans-serif;
-  font-size: 12px; font-weight: 700;
-  letter-spacing: 0.06em; text-transform: uppercase;
-  z-index: 400;
-  opacity: 0;
-  transition: opacity 0.3s;
-  white-space: nowrap;
-  pointer-events: none;
-}
-.toast-auto.visible { opacity: 1; }
 </style>
 </head>
 <body>
@@ -956,22 +870,7 @@ input:focus, select:focus {
   </div>
  
 </div><!-- /appScreen -->
-
-<!-- Modal confirmación borrado -->
-<div class="modal-overlay" id="modalEliminar">
-  <div class="modal-box">
-    <div class="modal-title">¿Eliminar producto?</div>
-    <div class="modal-body">Vas a eliminar <span class="modal-product-name" id="modalNombreProducto"></span>. Esta acción no se puede deshacer.</div>
-    <div class="modal-actions">
-      <button class="modal-btn-cancel" onclick="cerrarModal()">Cancelar</button>
-      <button class="modal-btn-delete" onclick="confirmarEliminar()">Eliminar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Toast auto-borrado -->
-<div class="toast-auto" id="toastAuto"></div>
-
+ 
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -1305,7 +1204,6 @@ async function cargarInventario() {
     actualizarBadge();
     renderInventario();
     verificarAvisos();
-    autoBorrarVencidos();
   } catch(e) {
     lista.innerHTML = `<div class="loading-msg" style="color:var(--red)">Error al cargar: ${e.message}</div>`;
   }
@@ -1386,7 +1284,7 @@ function renderInventario() {
     const uidShort = uid.length > 12 ? uid.substring(0,12)+"…" : uid;
  
     return `
-      <div class="inv-item ${p.estado}" style="animation-delay:${i*0.03}s" data-id="${p.r.id}">
+      <div class="inv-item ${p.estado}" style="animation-delay:${i*0.03}s">
         <div class="inv-item-icon">${icon}</div>
         <div class="inv-item-body">
           <div class="inv-item-name">${f["Nombre"] || "Sin nombre"}</div>
@@ -1400,13 +1298,7 @@ function renderInventario() {
             <span class="badge badge-email">${email}</span>
           </div>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;">
-          <div class="inv-item-time">${formatFecha(f["Fecha vencimiento"])}</div>
-          <button class="btn-eliminar" title="Eliminar producto"
-            onclick="pedirEliminar('${p.r.id}','${(f["Nombre"]||"este producto").replace(/'/g,"\\'")}')">
-            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-          </button>
-        </div>
+        <div class="inv-item-time">${formatFecha(f["Fecha vencimiento"])}</div>
       </div>`;
   }).join("");
  
@@ -1422,90 +1314,7 @@ function actualizarBadge() {
     cnt.classList.remove("visible");
   }
 }
-
-// ══════════════════════════════════════════
-//  ELIMINAR PRODUCTO
-// ══════════════════════════════════════════
-let idAEliminar = null;
-
-function pedirEliminar(id, nombre) {
-  idAEliminar = id;
-  document.getElementById("modalNombreProducto").textContent = nombre;
-  document.getElementById("modalEliminar").classList.add("visible");
-}
-
-function cerrarModal() {
-  idAEliminar = null;
-  document.getElementById("modalEliminar").classList.remove("visible");
-}
-
-async function confirmarEliminar() {
-  if (!idAEliminar) return;
-  const id = idAEliminar;
-  cerrarModal();
-  await eliminarDeAirtable(id);
-}
-
-async function eliminarDeAirtable(id, silencioso = false) {
-  try {
-    const res = await fetch(
-      `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLA)}/${id}`,
-      { method: "DELETE", headers: { "Authorization": "Bearer " + AIRTABLE_TOKEN } }
-    );
-    if (res.ok) {
-      todosLosProductos = todosLosProductos.filter(r => r.id !== id);
-      actualizarBadge();
-      renderInventario();
-      if (!silencioso) mostrarToast("Producto eliminado");
-    }
-  } catch(e) {
-    if (!silencioso) mostrarEstado("Error al eliminar: " + e.message, "error");
-  }
-}
-
-function mostrarToast(msg) {
-  const t = document.getElementById("toastAuto");
-  t.textContent = msg;
-  t.classList.add("visible");
-  setTimeout(() => t.classList.remove("visible"), 3000);
-}
-
-// ══════════════════════════════════════════
-//  AUTO-BORRADO AL VENCERSE
-// ══════════════════════════════════════════
-async function autoBorrarVencidos() {
-  if (!currentUser || !todosLosProductos.length) return;
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-
-  const vencidos = todosLosProductos.filter(r => {
-    const fv = r.fields["Fecha vencimiento"];
-    if (!fv) return false;
-    const fecha = parseFecha(fv);
-    return Math.floor((fecha - hoy) / 86400000) < 0;
-  });
-
-  if (!vencidos.length) return;
-
-  let borrados = 0;
-  for (const r of vencidos) {
-    try {
-      const res = await fetch(
-        `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLA)}/${r.id}`,
-        { method: "DELETE", headers: { "Authorization": "Bearer " + AIRTABLE_TOKEN } }
-      );
-      if (res.ok) {
-        todosLosProductos = todosLosProductos.filter(x => x.id !== r.id);
-        borrados++;
-      }
-    } catch(e) {}
-  }
-
-  if (borrados > 0) {
-    actualizarBadge();
-    renderInventario();
-    mostrarToast(`${borrados} producto${borrados > 1 ? "s" : ""} vencido${borrados > 1 ? "s" : ""} eliminado${borrados > 1 ? "s" : ""} automáticamente`);
-  }
-}
 </script>
 </body>
 </html>
+ 
