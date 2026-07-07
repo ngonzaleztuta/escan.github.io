@@ -635,10 +635,57 @@ input:focus, select:focus {
 .badge-uid        { background: var(--bg); color: var(--muted); border-color: var(--border); font-family: 'DM Mono', monospace; font-size: 10px; text-transform: none; letter-spacing: 0; }
 .badge-email      { background: var(--bg); color: var(--muted); border-color: var(--border); font-size: 10px; text-transform: none; letter-spacing: 0; }
  
+.inv-item-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
 .inv-item-time {
   font-family: 'DM Mono', monospace;
   font-size: 11px; color: var(--muted);
-  align-self: flex-start; white-space: nowrap; padding-top: 2px;
+  white-space: nowrap;
+}
+ 
+/* Botón eliminar: siempre visible y táctil (no depende de hover) */
+.inv-item-delete {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.inv-item-delete svg {
+  width: 14px; height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.inv-item-delete:active {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+  transform: scale(0.94);
+}
+/* El estado hover solo se aplica en dispositivos que realmente tienen mouse,
+   así en celular/tablet el botón se ve y funciona igual, solo sin el efecto hover */
+@media (hover: hover) and (pointer: fine) {
+  .inv-item-delete:hover {
+    background: var(--red-light);
+    border-color: var(--red);
+    color: var(--red);
+  }
 }
  
 .loading-msg { text-align: center; color: var(--muted); padding: 40px 20px; font-size: 13px; letter-spacing: 0.04em; }
@@ -1284,7 +1331,7 @@ function renderInventario() {
     const uidShort = uid.length > 12 ? uid.substring(0,12)+"…" : uid;
  
     return `
-      <div class="inv-item ${p.estado}" style="animation-delay:${i*0.03}s">
+      <div class="inv-item ${p.estado}" style="animation-delay:${i*0.03}s" data-record-id="${p.r.id}">
         <div class="inv-item-icon">${icon}</div>
         <div class="inv-item-body">
           <div class="inv-item-name">${f["Nombre"] || "Sin nombre"}</div>
@@ -1298,7 +1345,12 @@ function renderInventario() {
             <span class="badge badge-email">${email}</span>
           </div>
         </div>
-        <div class="inv-item-time">${formatFecha(f["Fecha vencimiento"])}</div>
+        <div class="inv-item-side">
+          <div class="inv-item-time">${formatFecha(f["Fecha vencimiento"])}</div>
+          <button type="button" class="inv-item-delete" onclick="eliminarProducto('${p.r.id}', this)" title="Eliminar" aria-label="Eliminar producto">
+            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>
       </div>`;
   }).join("");
  
@@ -1314,7 +1366,48 @@ function actualizarBadge() {
     cnt.classList.remove("visible");
   }
 }
+ 
+// ══════════════════════════════════════════
+//  ELIMINAR PRODUCTO (funciona en cualquier dispositivo:
+//  no depende de :hover, usa onclick que responde igual
+//  a click de mouse o toque en pantalla táctil)
+// ══════════════════════════════════════════
+async function eliminarProducto(recordId, btnEl) {
+  const ok = window.confirm("¿Eliminar este producto del inventario? Esta acción no se puede deshacer.");
+  if (!ok) return;
+ 
+  const item = btnEl.closest(".inv-item");
+  if (item) {
+    item.style.opacity = "0.4";
+    item.style.pointerEvents = "none";
+  }
+  btnEl.disabled = true;
+ 
+  try {
+    const res = await fetch(
+      `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLA)}/${recordId}`,
+      {
+        method: "DELETE",
+        headers: { "Authorization": "Bearer " + AIRTABLE_TOKEN }
+      }
+    );
+ 
+    if (res.ok) {
+      todosLosProductos = todosLosProductos.filter(r => r.id !== recordId);
+      actualizarBadge();
+      renderInventario();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      alert("Error al eliminar: " + (err.error?.message || res.status));
+      if (item) { item.style.opacity = "1"; item.style.pointerEvents = "auto"; }
+      btnEl.disabled = false;
+    }
+  } catch (e) {
+    alert("Error de conexión: " + e.message);
+    if (item) { item.style.opacity = "1"; item.style.pointerEvents = "auto"; }
+    btnEl.disabled = false;
+  }
+}
 </script>
 </body>
 </html>
- 
