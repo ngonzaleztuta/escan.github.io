@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Política de Privacidad — Inventario Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0ede8;
+    --white: #faf9f7;
+    --primary: #1a1a1a;
+    --accent: #c8502a;
+    --text: #1a1a1a;
+    --muted: #7a7570;
+    --border: #ddd9d3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .header {
+    background: var(--primary);
+    color: #fff;
+    padding: 0 20px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+  }
+  .header-brand {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.9;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+  h1 {
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+  h1 span { color: var(--accent); }
+  .updated {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+  h2 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-top: 32px;
+    margin-bottom: 10px;
+    color: var(--accent);
+  }
+  p, li {
+    font-size: 14px;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  ul { padding-left: 20px; margin-bottom: 10px; }
+  .box {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 32px;
+    margin-top: 24px;
+  }
+  a { color: var(--accent); }
+  footer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-brand">Inventario Scanner</div>
+</div>
+
+<div class="wrap">
+  <h1>Política de <span>Privacidad</span></h1>
+  <div class="updated">Última actualización: julio de 2026</div>
+
+  <div class="box">
+    <p>
+      Inventario Scanner ("la app") es una aplicación web personal para escanear productos por código de barras
+      y llevar control de sus fechas de vencimiento. Esta política explica qué información se recopila y cómo se usa.
+    </p>
+
+    <h2>1. Información que recopilamos</h2>
+    <ul>
+      <li><strong>Datos de tu cuenta:</strong> correo electrónico y un identificador único (UID) generado al iniciar sesión con Google o con correo y contraseña, a través de Firebase Authentication.</li>
+      <li><strong>Datos de inventario:</strong> los productos que registras manualmente o escaneas (nombre, código de barras, tipo, fecha de vencimiento y fecha de aviso).</li>
+      <li><strong>Acceso a Google Calendar (opcional):</strong> si inicias sesión con Google y aceptas el permiso correspondiente, la app crea eventos en tu calendario personal para recordarte las fechas de vencimiento de tus productos.</li>
+    </ul>
+
+    <h2>2. Cómo usamos tu información</h2>
+    <ul>
+      <li>Para mostrarte tu propio inventario, filtrado por tu cuenta de usuario.</li>
+      <li>Para crear recordatorios de vencimiento en tu Google Calendar, únicamente si otorgaste ese permiso.</li>
+      <li>No usamos tu información con fines publicitarios ni la compartimos con terceros para marketing.</li>
+    </ul>
+
+    <h2>3. Dónde se almacena tu información</h2>
+    <ul>
+      <li>Los datos de tu cuenta se gestionan mediante <strong>Firebase Authentication</strong> (Google/Alphabet).</li>
+      <li>Los datos de inventario se almacenan en <strong>Airtable</strong>, asociados a tu identificador de usuario.</li>
+      <li>Los eventos de calendario se crean directamente en tu cuenta de <strong>Google Calendar</strong>, usando el permiso que tú autorizas; la app no almacena copias de tus eventos.</li>
+    </ul>
+
+    <h2>4. Acceso a Google Calendar</h2>
+    <p>
+      El acceso a Google Calendar se solicita mediante el permiso
+      <span style="font-family:'DM Mono',monospace">https://www.googleapis.com/auth/calendar.events</span>,
+      que permite únicamente crear y gestionar eventos. La app no lee, comparte ni almacena el contenido
+      de tu calendario fuera de los eventos que ella misma crea. Puedes revocar este acceso en cualquier
+      momento desde <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">la configuración de tu cuenta de Google</a>.
+    </p>
+
+    <h2>5. Eliminación de datos</h2>
+    <p>
+      Puedes eliminar cualquier producto de tu inventario directamente desde la app. Si deseas eliminar
+      completamente tu cuenta y todos tus datos asociados, contáctanos al correo indicado abajo.
+    </p>
+
+    <h2>6. Contacto</h2>
+    <p>
+      Si tienes preguntas sobre esta política de privacidad, puedes escribir a:
+      <a href="mailto:ngonzaleztuta@gmail.com">ngonzaleztuta@gmail.com</a>
+    </p>
+  </div>
+
+  <footer>Inventario Scanner · Documento informativo, no constituye asesoría legal.</footer>
+</div>
+
+</body>
+</html>
