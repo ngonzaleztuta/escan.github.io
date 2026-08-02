@@ -927,6 +927,8 @@ input:focus, select:focus {
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<!-- Google Identity Services (para el permiso de Calendar, independiente de Firebase) -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
  
 <script>
 // ══════════════════════════════════════════
@@ -952,20 +954,42 @@ const TABLA          = "Table 1";
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 
-// Captura el resultado al volver de Google (login por redirect)
-auth.getRedirectResult()
-  .then(result => {
-    if (result && result.credential) {
-      googleAccessToken = result.credential.accessToken;
+// ══════════════════════════════════════════
+//  GOOGLE IDENTITY SERVICES (permiso de Calendar)
+// ══════════════════════════════════════════
+const GOOGLE_CLIENT_ID = "925479664370-7hmc2juj454kuffl892i23vn7j2o3vl0.apps.googleusercontent.com";
+let tokenClient = null;
+
+window.addEventListener("load", () => {
+  if (window.google && google.accounts && google.accounts.oauth2) {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: "https://www.googleapis.com/auth/calendar.events",
+      callback: () => {} // se sobreescribe en cada solicitud, ver solicitarTokenCalendar()
+    });
+  }
+});
+
+// Pide (o renueva) el accessToken de Calendar. Devuelve una Promise<string|null>.
+function solicitarTokenCalendar(promptType) {
+  return new Promise(resolve => {
+    if (!tokenClient) { resolve(null); return; }
+    tokenClient.callback = (response) => {
+      if (response && response.access_token) {
+        googleAccessToken = response.access_token;
+        resolve(response.access_token);
+      } else {
+        resolve(null);
+      }
+    };
+    try {
+      tokenClient.requestAccessToken({ prompt: promptType });
+    } catch (e) {
+      console.warn("No se pudo solicitar el token de Calendar:", e.message);
+      resolve(null);
     }
-    const pendiente = sessionStorage.getItem("pendingCalendarEvent");
-    if (pendiente && googleAccessToken) {
-      sessionStorage.removeItem("pendingCalendarEvent");
-      const { nombre, fechaVence, fechaAviso } = JSON.parse(pendiente);
-      crearEventoCalendar(nombre, fechaVence, fechaAviso, true);
-    }
-  })
-  .catch(e => showAuthError(tradError(e.code)));
+  });
+}
  
 // ══════════════════════════════════════════
 //  ESTADO GLOBAL
@@ -1042,8 +1066,9 @@ function authAction() {
 function loginConGoogle() {
   clearAuthError();
   const provider = new firebase.auth.GoogleAuthProvider();
-  provider.addScope('https://www.googleapis.com/auth/calendar.events');
-  auth.signInWithRedirect(provider);
+  auth.signInWithPopup(provider)
+    .then(() => solicitarTokenCalendar(""))
+    .catch(e => showAuthError(tradError(e.code)));
 }
  
 function logout() {
@@ -1197,20 +1222,8 @@ function detenerEscaner() {
 // ══════════════════════════════════════════
 //  GOOGLE CALENDAR (evento individual por usuario)
 // ══════════════════════════════════════════
-async function reconectarGoogleCalendar(nombre, fechaVence, fechaAviso) {
-  try {
-    // Guardamos el evento pendiente: la página se recargará al volver de Google
-    sessionStorage.setItem("pendingCalendarEvent", JSON.stringify({ nombre, fechaVence, fechaAviso }));
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.addScope('https://www.googleapis.com/auth/calendar.events');
-    await auth.currentUser.reauthenticateWithRedirect(provider);
-  } catch (e) {
-    console.warn("No se pudo reconectar Google Calendar:", e.message);
-  }
-}
-
 async function crearEventoCalendar(nombre, fechaVence, fechaAviso, reintentando) {
-  if (!googleAccessToken) return; // el usuario no inició sesión con Google / no vinculó Calendar
+  if (!googleAccessToken) return; // el usuario no vinculó el permiso de Calendar
 
   const evento = {
     summary: `Vence: ${nombre}`,
@@ -1234,9 +1247,10 @@ async function crearEventoCalendar(nombre, fechaVence, fechaAviso, reintentando)
     });
 
     if (res.status === 401 && !reintentando) {
-      // El access token expiró (dura ~1h): reconectamos por redirect y reintentamos al volver
+      // El access token expiró (dura ~1h): pedimos uno nuevo y reintentamos una vez
       googleAccessToken = null;
-      await reconectarGoogleCalendar(nombre, fechaVence, fechaAviso);
+      const nuevoToken = await solicitarTokenCalendar("");
+      if (nuevoToken) await crearEventoCalendar(nombre, fechaVence, fechaAviso, true);
       return;
     }
 
