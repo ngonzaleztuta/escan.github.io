@@ -951,6 +951,21 @@ const TABLA          = "Table 1";
 // ══════════════════════════════════════════
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
+
+// Captura el resultado al volver de Google (login por redirect)
+auth.getRedirectResult()
+  .then(result => {
+    if (result && result.credential) {
+      googleAccessToken = result.credential.accessToken;
+    }
+    const pendiente = sessionStorage.getItem("pendingCalendarEvent");
+    if (pendiente && googleAccessToken) {
+      sessionStorage.removeItem("pendingCalendarEvent");
+      const { nombre, fechaVence, fechaAviso } = JSON.parse(pendiente);
+      crearEventoCalendar(nombre, fechaVence, fechaAviso, true);
+    }
+  })
+  .catch(e => showAuthError(tradError(e.code)));
  
 // ══════════════════════════════════════════
 //  ESTADO GLOBAL
@@ -1028,12 +1043,7 @@ function loginConGoogle() {
   clearAuthError();
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.addScope('https://www.googleapis.com/auth/calendar.events');
-  auth.signInWithPopup(provider)
-    .then(result => {
-      const credential = firebase.auth.GoogleAuthProvider.credentialFromResult(result);
-      if (credential) googleAccessToken = credential.accessToken;
-    })
-    .catch(e => showAuthError(tradError(e.code)));
+  auth.signInWithRedirect(provider);
 }
  
 function logout() {
@@ -1187,17 +1197,15 @@ function detenerEscaner() {
 // ══════════════════════════════════════════
 //  GOOGLE CALENDAR (evento individual por usuario)
 // ══════════════════════════════════════════
-async function reconectarGoogleCalendar() {
+async function reconectarGoogleCalendar(nombre, fechaVence, fechaAviso) {
   try {
+    // Guardamos el evento pendiente: la página se recargará al volver de Google
+    sessionStorage.setItem("pendingCalendarEvent", JSON.stringify({ nombre, fechaVence, fechaAviso }));
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/calendar.events');
-    const result = await auth.currentUser.reauthenticateWithPopup(provider);
-    const credential = firebase.auth.GoogleAuthProvider.credentialFromResult(result);
-    if (credential) googleAccessToken = credential.accessToken;
-    return !!googleAccessToken;
+    await auth.currentUser.reauthenticateWithRedirect(provider);
   } catch (e) {
     console.warn("No se pudo reconectar Google Calendar:", e.message);
-    return false;
   }
 }
 
@@ -1226,10 +1234,9 @@ async function crearEventoCalendar(nombre, fechaVence, fechaAviso, reintentando)
     });
 
     if (res.status === 401 && !reintentando) {
-      // El access token expiró (dura ~1h): pedimos uno nuevo y reintentamos una vez
+      // El access token expiró (dura ~1h): reconectamos por redirect y reintentamos al volver
       googleAccessToken = null;
-      const reconectado = await reconectarGoogleCalendar();
-      if (reconectado) await crearEventoCalendar(nombre, fechaVence, fechaAviso, true);
+      await reconectarGoogleCalendar(nombre, fechaVence, fechaAviso);
       return;
     }
 
