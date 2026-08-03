@@ -1238,7 +1238,7 @@ async function crearEventoCalendar(nombre, fechaAviso, reintentando) {
   if (!googleAccessToken) return null; // el usuario no vinculó el permiso de Calendar
 
   const evento = {
-    summary: `Aviso: ${nombre}`,
+    summary: `Aviso producto: ${nombre} cerca a vencer`,
     description: `Recordatorio de aviso para el producto "${nombre}" registrado en el inventario.`,
     start: { date: fechaAviso },
     end:   { date: fechaAviso },
