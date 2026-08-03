@@ -1234,14 +1234,14 @@ function detenerEscaner() {
 // ══════════════════════════════════════════
 
 // Crea el evento en la FECHA DE AVISO (no en la de vencimiento) y devuelve el ID del evento creado (o null si falló).
-async function crearEventoCalendar(nombre, fechaAviso, reintentando) {
+async function crearEventoCalendar(nombre, fechaAviso, fechaVence, reintentando) {
   if (!googleAccessToken) return null; // el usuario no vinculó el permiso de Calendar
 
   const evento = {
-    summary: `Aviso producto: ${nombre} cerca a vencer`,
+    summary: `Aviso: ${nombre}`,
     description: `Recordatorio de aviso para el producto "${nombre}" registrado en el inventario.`,
     start: { date: fechaAviso },
-    end:   { date: fechaAviso },
+    end:   { date: fechaVence || fechaAviso }, // si no hay fecha de vencimiento, usamos la misma fecha de aviso
     reminders: {
       useDefault: false,
       overrides: [{ method: "popup", minutes: 0 }]
