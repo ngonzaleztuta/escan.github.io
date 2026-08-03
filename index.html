@@ -960,6 +960,14 @@ const auth = firebase.auth();
 const GOOGLE_CLIENT_ID = "925479664370-7hmc2juj454kuffl892i23vn7j2o3vl0.apps.googleusercontent.com";
 let tokenClient = null;
 
+// Intenta recuperar el permiso de Calendar SIN mostrar ningún popup (usa la sesión
+// de Google ya activa en el navegador). Se llama desde dos sitios porque no sabemos
+// cuál ocurre primero: que el tokenClient esté listo, o que Firebase confirme el login.
+function intentarReconexionSilenciosaCalendar() {
+  if (!tokenClient || !currentUser || googleAccessToken) return;
+  solicitarTokenCalendar("none");
+}
+
 window.addEventListener("load", () => {
   if (window.google && google.accounts && google.accounts.oauth2) {
     tokenClient = google.accounts.oauth2.initTokenClient({
@@ -967,6 +975,7 @@ window.addEventListener("load", () => {
       scope: "https://www.googleapis.com/auth/calendar.events",
       callback: () => {} // se sobreescribe en cada solicitud, ver solicitarTokenCalendar()
     });
+    intentarReconexionSilenciosaCalendar();
   }
 });
 
@@ -1031,6 +1040,7 @@ auth.onAuthStateChanged(user => {
     document.getElementById("compEmail").textContent = user.email;
     cargarInventario();
     verificarPermisoNotificaciones();
+    intentarReconexionSilenciosaCalendar();
   } else {
     document.getElementById("authScreen").style.display = "flex";
     document.getElementById("authScreen").classList.add("visible");
@@ -1337,6 +1347,13 @@ async function guardarEnAirtable() {
       cnt.classList.add("visible");
 
       // Crear el evento en Calendar (fecha de AVISO) y guardar su ID en Airtable para poder borrarlo después.
+      // Si la reconexión silenciosa no alcanzó a recuperar el permiso, lo pedimos aquí
+      // de forma visible (este clic en "Guardar" cuenta como gesto del usuario, así que
+      // el popup de Google no debería ser bloqueado por el navegador).
+      if (!googleAccessToken && tokenClient) {
+        await solicitarTokenCalendar("");
+      }
+
       const eventId = await crearEventoCalendar(nombre, fechaAviso);
       if (eventId) {
         try {
